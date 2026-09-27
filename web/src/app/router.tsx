@@ -1,4 +1,9 @@
-import { createRootRoute, createRoute, createRouter } from '@tanstack/react-router';
+import {
+  createHashHistory,
+  createRootRoute,
+  createRoute,
+  createRouter,
+} from '@tanstack/react-router';
 import { z } from 'zod';
 import { Shell, NotFound, Home, GameOverview, Play } from './pages';
 const rootRoute = createRootRoute({ component: Shell, notFoundComponent: NotFound });
@@ -18,6 +23,7 @@ const playRoute = createRoute({
 });
 export const router = createRouter({
   routeTree: rootRoute.addChildren([indexRoute, overviewRoute, playRoute]),
+  history: createHashHistory(),
   scrollRestoration: true,
   defaultPreload: 'intent',
 });
