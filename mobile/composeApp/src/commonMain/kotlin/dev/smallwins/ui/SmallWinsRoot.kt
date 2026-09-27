@@ -36,6 +36,7 @@ import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import dev.smallwins.shared.NativeStatus
@@ -84,6 +85,7 @@ private fun PortfolioCatalog(onOpenPipes: () -> Unit) {
             Card(
                 modifier = Modifier
                     .fillMaxWidth()
+                    .testTag("game-${game.id}")
                     .then(if (playable) Modifier.clickable(onClick = onOpenPipes) else Modifier),
                 colors = CardDefaults.cardColors(containerColor = if (playable) Color(0xFFE4F1ED) else Color.White),
             ) {
@@ -107,12 +109,19 @@ private fun PipesGame(level: PipesLevel, onBack: () -> Unit, onNext: () -> Unit)
     val connections = PipesEngine.connections(level, state)
     val solved = PipesEngine.solved(level, state)
     Column(
-        modifier = Modifier.fillMaxSize().padding(horizontal = 20.dp, vertical = 28.dp),
+        modifier = Modifier
+            .fillMaxSize()
+            .testTag("pipes-screen-${level.id}")
+            .padding(horizontal = 20.dp, vertical = 28.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-            Button(onClick = onBack) { Text("Back") }
-            Text("${connections.reached.size} / ${level.ports.size} connected", fontWeight = FontWeight.SemiBold)
+            Button(modifier = Modifier.testTag("back-to-catalog"), onClick = onBack) { Text("Back") }
+            Text(
+                "${connections.reached.size} / ${level.ports.size} connected",
+                modifier = Modifier.testTag("connection-progress"),
+                fontWeight = FontWeight.SemiBold,
+            )
         }
         Text("Burrow Network", style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold)
         Text(level.title, color = Color(0xFF625B52))
@@ -138,7 +147,9 @@ private fun PipesGame(level: PipesLevel, onBack: () -> Unit, onNext: () -> Unit)
             Card(colors = CardDefaults.cardColors(containerColor = Color(0xFFDDF3DF))) {
                 Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
                     Text("Everything connects.", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-                    if (level.id == pipesTutorial.id) Button(onClick = onNext) { Text("Next level") }
+                    if (level.id == pipesTutorial.id) {
+                        Button(modifier = Modifier.testTag("next-level"), onClick = onNext) { Text("Next level") }
+                    }
                 }
             }
         }
@@ -160,6 +171,7 @@ private fun PipeCell(
     Box(
         modifier = Modifier
             .size(88.dp)
+            .testTag("pipe-$cell")
             .background(background, RoundedCornerShape(18.dp))
             .semantics { contentDescription = "Pipe ${cell + 1}, ${if (connected) "connected" else "not connected"}" }
             .clickable(enabled = enabled, onClick = onRotate),

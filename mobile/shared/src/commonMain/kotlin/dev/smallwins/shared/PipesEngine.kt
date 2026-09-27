@@ -15,7 +15,7 @@ data class PipeLeak(val cell: Int, val direction: Int)
 data class PipeConnections(val reached: Set<Int>, val leaks: List<PipeLeak>)
 
 object PipesEngine {
-    fun initial(level: PipesLevel) = PipesState(level.initialRotations)
+    fun initial(level: PipesLevel) = PipesState(level.initialRotations.toList())
 
     fun rotate(level: PipesLevel, state: PipesState, cell: Int, quarterTurns: Int = 1): PipesState {
         require(cell in level.ports.indices) { "Cell is outside the board" }

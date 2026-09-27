@@ -1,3 +1,6 @@
+@file:OptIn(org.jetbrains.compose.ExperimentalComposeLibrary::class)
+@file:Suppress("DEPRECATION")
+
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
 plugins {
@@ -8,6 +11,8 @@ plugins {
 }
 
 kotlin {
+    jvm("desktop")
+
     android {
         namespace = "dev.smallwins.ui"
         compileSdk = 36
@@ -34,6 +39,10 @@ kotlin {
         }
         commonTest.dependencies {
             implementation(libs.kotlin.test)
+            implementation(compose.uiTest)
+        }
+        getByName("desktopTest").dependencies {
+            implementation(compose.desktop.currentOs)
         }
         getByName("androidHostTest").dependencies {
             implementation(libs.junit)

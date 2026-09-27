@@ -12,11 +12,19 @@ A calm, cross-platform puzzle portfolio built around deterministic rules, gentle
 ![TypeScript](https://img.shields.io/badge/TypeScript-6-202624?logo=typescript&logoColor=3178C6)
 ![Kotlin Multiplatform](https://img.shields.io/badge/Kotlin-Multiplatform-202624?logo=kotlin&logoColor=7F52FF)
 ![Compose Multiplatform](https://img.shields.io/badge/Compose-Multiplatform-202624?logo=jetpackcompose&logoColor=4285F4)
-![Tests](https://img.shields.io/badge/tests-61%20passing-2F7D58)
+![Tests](https://img.shields.io/badge/tests-web%2061%20%7C%20mobile%2015-2F7D58)
 
 </div>
 
-![Small Wins game catalog](.github/readme-assets/web-catalog-desktop.png)
+<table>
+  <tr>
+    <td width="33%"><img src=".github/readme-assets/web-catalog-mobile.png" alt="Small Wins catalog in a 390 by 844 mobile viewport"></td>
+    <td width="33%"><img src=".github/readme-assets/burrow-levels-mobile.png" alt="Burrow Network level selection in a 390 by 844 mobile viewport"></td>
+    <td width="33%"><img src=".github/readme-assets/burrow-game-mobile.png" alt="Burrow Network tutorial in a 390 by 844 mobile viewport"></td>
+  </tr>
+</table>
+
+<div align="center"><sub>Live web demo captured at a 390 × 844 mobile viewport.</sub></div>
 
 ## The collection
 
@@ -34,13 +42,6 @@ Small Wins contains six independent games and 42 playable levels, including a ge
 There are no timers, streaks, currencies, or locked levels. Progress is stored locally and every game supports keyboard and pointer input.
 
 ## Designed for a moment of calm
-
-<table>
-  <tr>
-    <td width="68%"><img src=".github/readme-assets/burrow-network-game.png" alt="Burrow Network tutorial on desktop"></td>
-    <td width="32%"><img src=".github/readme-assets/web-catalog-mobile.png" alt="Small Wins catalog at a mobile viewport"></td>
-  </tr>
-</table>
 
 - Clear rules and reversible actions.
 - Progressive hints instead of punishment.
@@ -78,8 +79,13 @@ The Android and iOS clients use the same Kotlin Multiplatform and Compose Multip
 | Shared Compose catalog for all six games | **Implemented** |
 | Shared deterministic Burrow Network engine | **Implemented** |
 | Burrow Network tutorial and first native level | **Implemented** |
+| Shared engine and catalog tests | **12 tests · JVM, Android host, iOS simulator** |
+| Shared Compose UI flows | **3 JVM UI tests** |
+| Android debug build | **Verified** |
+| iOS KMP device and simulator compilation | **Verified** |
+| iOS SwiftUI host build | **Verified** |
+| iOS simulator XCTest | **Pending** |
 | Purrdoku, Untangle, Waypoints, Shikaku, and Habitat Search | **Web only — native ports planned** |
-| Android/iOS build and device verification | **Not run yet** |
 
 The native scope stays intentionally honest: one mechanic is ported end to end before the remaining games are moved across.
 
@@ -108,6 +114,13 @@ npm run validate:levels
 npm test
 npm run build
 npm run test:e2e
+```
+
+The shared mobile rules, Compose UI flows, and Android host can be checked with:
+
+```bash
+cd mobile
+./gradlew :shared:allTests :composeApp:desktopTest :androidApp:assembleDebug
 ```
 
 ## Deployment

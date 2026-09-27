@@ -6,6 +6,8 @@ plugins {
 }
 
 kotlin {
+    jvm("desktop")
+
     android {
         namespace = "dev.smallwins.shared"
         compileSdk = 36
