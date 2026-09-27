@@ -98,7 +98,7 @@ export function Preview({ gameId }: { gameId: GameId }) {
       </svg>
     );
   if (gameId === 'wildlife-survey')
-    return <div className="wildlife-preview" aria-hidden="true"><img src="/wildlife-survey-habitats.png" alt="" /><span>look a little closer</span></div>;
+    return <div className="wildlife-preview" aria-hidden="true"><img src={`${import.meta.env.BASE_URL}wildlife-survey-habitats.png`} alt="" /><span>look a little closer</span></div>;
   return (
     <svg className="game-preview" viewBox="0 0 300 175" aria-hidden="true">
       {Array.from({ length: 20 }, (_, i) => (
