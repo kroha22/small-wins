@@ -1,0 +1,45 @@
+.route-cell.blocked {
+  background: repeating-linear-gradient(135deg, #dbe2d0 0, #dbe2d0 5px, #8a9d7d 5px, #8a9d7d 8px);
+  border-color: #6b7b60;
+  cursor: default;
+}
+.route-cell.blocked:hover:not(:focus-visible) {
+  outline: none;
+  box-shadow: none;
+}
+.route-cell > svg.route-start-icon {
+  width: 30px;
+  height: 30px;
+  stroke: #3d5038;
+  fill: #f5dfb6;
+  stroke-width: 1.8;
+  background: #fff9e9;
+  border-radius: 8px;
+  padding: 2px;
+}
+.route-carrot {
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 9px;
+  background: #fff9e9;
+}
+.route-carrot.collected {
+  background: #e4eddb;
+}
+.route-carrot.collected .carrot-icon {
+  opacity: 0.5;
+}
+.route-carrot .carrot-check {
+  position: absolute;
+  right: -2px;
+  top: -2px;
+  width: 17px;
+  height: 17px;
+  padding: 1px;
+  border-radius: 50%;
+  background: #365843;
+  color: #fff;
+  stroke-width: 3;
+}

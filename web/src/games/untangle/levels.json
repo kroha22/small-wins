@@ -1,0 +1,420 @@
+[
+  {
+    "id": "tutorial",
+    "title": "Loose ends",
+    "difficulty": "tutorial",
+    "contentVersion": 1,
+    "payload": {
+      "nodes": [
+        {
+          "id": "A",
+          "x": 50,
+          "y": 13,
+          "fixed": false
+        },
+        {
+          "id": "B",
+          "x": 50,
+          "y": 87,
+          "fixed": false
+        },
+        {
+          "id": "C",
+          "x": 87,
+          "y": 50,
+          "fixed": false
+        },
+        {
+          "id": "D",
+          "x": 13,
+          "y": 50,
+          "fixed": false
+        }
+      ],
+      "edges": [
+        ["A", "B"],
+        ["B", "C"],
+        ["C", "D"],
+        ["D", "A"]
+      ],
+      "bounds": {
+        "min": 8,
+        "max": 92
+      },
+      "minNodeDistance": 12
+    }
+  },
+  {
+    "id": "level-1",
+    "title": "A simple twist",
+    "difficulty": "easy",
+    "contentVersion": 1,
+    "payload": {
+      "nodes": [
+        {
+          "id": "A",
+          "x": 50,
+          "y": 13,
+          "fixed": false
+        },
+        {
+          "id": "B",
+          "x": 71.7,
+          "y": 79.9,
+          "fixed": false
+        },
+        {
+          "id": "C",
+          "x": 85.2,
+          "y": 38.6,
+          "fixed": false
+        },
+        {
+          "id": "D",
+          "x": 28.3,
+          "y": 79.9,
+          "fixed": false
+        },
+        {
+          "id": "E",
+          "x": 14.8,
+          "y": 38.6,
+          "fixed": false
+        }
+      ],
+      "edges": [
+        ["A", "B"],
+        ["B", "C"],
+        ["C", "D"],
+        ["D", "E"],
+        ["E", "A"]
+      ],
+      "bounds": {
+        "min": 8,
+        "max": 92
+      },
+      "minNodeDistance": 12
+    }
+  },
+  {
+    "id": "level-2",
+    "title": "Crossed paths",
+    "difficulty": "easy",
+    "contentVersion": 1,
+    "payload": {
+      "nodes": [
+        {
+          "id": "A",
+          "x": 50,
+          "y": 13,
+          "fixed": false
+        },
+        {
+          "id": "B",
+          "x": 71.7,
+          "y": 79.9,
+          "fixed": false
+        },
+        {
+          "id": "C",
+          "x": 85.2,
+          "y": 38.6,
+          "fixed": false
+        },
+        {
+          "id": "D",
+          "x": 28.3,
+          "y": 79.9,
+          "fixed": false
+        },
+        {
+          "id": "E",
+          "x": 14.8,
+          "y": 38.6,
+          "fixed": false
+        }
+      ],
+      "edges": [
+        ["A", "B"],
+        ["B", "C"],
+        ["C", "D"],
+        ["D", "E"],
+        ["E", "A"]
+      ],
+      "bounds": {
+        "min": 8,
+        "max": 92
+      },
+      "minNodeDistance": 12
+    }
+  },
+  {
+    "id": "level-3",
+    "title": "Pinned in place",
+    "difficulty": "medium",
+    "contentVersion": 1,
+    "payload": {
+      "nodes": [
+        {
+          "id": "A",
+          "x": 50,
+          "y": 13,
+          "fixed": true
+        },
+        {
+          "id": "B",
+          "x": 50,
+          "y": 87,
+          "fixed": false
+        },
+        {
+          "id": "C",
+          "x": 82,
+          "y": 68.5,
+          "fixed": false
+        },
+        {
+          "id": "D",
+          "x": 82,
+          "y": 31.5,
+          "fixed": false
+        },
+        {
+          "id": "E",
+          "x": 18,
+          "y": 68.5,
+          "fixed": false
+        },
+        {
+          "id": "F",
+          "x": 18,
+          "y": 31.5,
+          "fixed": false
+        }
+      ],
+      "edges": [
+        ["A", "B"],
+        ["B", "C"],
+        ["C", "D"],
+        ["D", "E"],
+        ["E", "F"],
+        ["F", "A"]
+      ],
+      "bounds": {
+        "min": 8,
+        "max": 92
+      },
+      "minNodeDistance": 12
+    }
+  },
+  {
+    "id": "level-4",
+    "title": "Room to move",
+    "difficulty": "medium",
+    "contentVersion": 1,
+    "payload": {
+      "nodes": [
+        {
+          "id": "A",
+          "x": 50,
+          "y": 13,
+          "fixed": true
+        },
+        {
+          "id": "B",
+          "x": 50,
+          "y": 87,
+          "fixed": false
+        },
+        {
+          "id": "C",
+          "x": 18,
+          "y": 68.5,
+          "fixed": false
+        },
+        {
+          "id": "D",
+          "x": 82,
+          "y": 31.5,
+          "fixed": false
+        },
+        {
+          "id": "E",
+          "x": 82,
+          "y": 68.5,
+          "fixed": false
+        },
+        {
+          "id": "F",
+          "x": 18,
+          "y": 31.5,
+          "fixed": false
+        }
+      ],
+      "edges": [
+        ["A", "B"],
+        ["B", "C"],
+        ["C", "D"],
+        ["D", "E"],
+        ["E", "F"],
+        ["F", "A"],
+        ["A", "C"],
+        ["A", "D"],
+        ["A", "E"]
+      ],
+      "bounds": {
+        "min": 8,
+        "max": 92
+      },
+      "minNodeDistance": 12
+    }
+  },
+  {
+    "id": "level-5",
+    "title": "A closer look",
+    "difficulty": "hard",
+    "contentVersion": 1,
+    "payload": {
+      "nodes": [
+        {
+          "id": "A",
+          "x": 50,
+          "y": 13,
+          "fixed": true
+        },
+        {
+          "id": "B",
+          "x": 66.1,
+          "y": 83.3,
+          "fixed": false
+        },
+        {
+          "id": "C",
+          "x": 13.9,
+          "y": 58.2,
+          "fixed": false
+        },
+        {
+          "id": "D",
+          "x": 78.9,
+          "y": 26.9,
+          "fixed": false
+        },
+        {
+          "id": "E",
+          "x": 33.9,
+          "y": 83.3,
+          "fixed": false
+        },
+        {
+          "id": "F",
+          "x": 86.1,
+          "y": 58.2,
+          "fixed": false
+        },
+        {
+          "id": "G",
+          "x": 21.1,
+          "y": 26.9,
+          "fixed": false
+        }
+      ],
+      "edges": [
+        ["A", "B"],
+        ["B", "C"],
+        ["C", "D"],
+        ["D", "E"],
+        ["E", "F"],
+        ["F", "G"],
+        ["G", "A"],
+        ["A", "C"],
+        ["A", "D"],
+        ["A", "E"],
+        ["A", "F"]
+      ],
+      "bounds": {
+        "min": 8,
+        "max": 92
+      },
+      "minNodeDistance": 12
+    }
+  },
+  {
+    "id": "level-6",
+    "title": "Clear thinking",
+    "difficulty": "hard",
+    "contentVersion": 1,
+    "payload": {
+      "nodes": [
+        {
+          "id": "A",
+          "x": 50,
+          "y": 13,
+          "fixed": true
+        },
+        {
+          "id": "B",
+          "x": 50,
+          "y": 87,
+          "fixed": false
+        },
+        {
+          "id": "C",
+          "x": 13,
+          "y": 50,
+          "fixed": false
+        },
+        {
+          "id": "D",
+          "x": 23.8,
+          "y": 76.2,
+          "fixed": false
+        },
+        {
+          "id": "E",
+          "x": 76.2,
+          "y": 23.8,
+          "fixed": false
+        },
+        {
+          "id": "F",
+          "x": 76.2,
+          "y": 76.2,
+          "fixed": false
+        },
+        {
+          "id": "G",
+          "x": 87,
+          "y": 50,
+          "fixed": false
+        },
+        {
+          "id": "H",
+          "x": 23.8,
+          "y": 23.8,
+          "fixed": false
+        }
+      ],
+      "edges": [
+        ["A", "B"],
+        ["B", "C"],
+        ["C", "D"],
+        ["D", "E"],
+        ["E", "F"],
+        ["F", "G"],
+        ["G", "H"],
+        ["H", "A"],
+        ["A", "C"],
+        ["A", "D"],
+        ["A", "E"],
+        ["A", "F"],
+        ["A", "G"]
+      ],
+      "bounds": {
+        "min": 8,
+        "max": 92
+      },
+      "minNodeDistance": 12
+    }
+  }
+]

@@ -1,0 +1,196 @@
+.house-legend {
+  margin: 0 auto 14px;
+  max-width: 470px;
+  font-size: 12px;
+}
+.house-rooms,
+.house-objects {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 12px;
+}
+.house-rooms {
+  margin-bottom: 10px;
+}
+[data-room='kitchen'] {
+  --room-floor: #f6e5bc;
+}
+[data-room='living-room'] {
+  --room-floor: #dde9df;
+}
+[data-room='bedroom'] {
+  --room-floor: #eadfe9;
+}
+[data-room='study'] {
+  --room-floor: #dce8ee;
+}
+.house-room-key {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  text-transform: capitalize;
+}
+.house-room-key b {
+  display: grid;
+  place-items: center;
+  width: 23px;
+  height: 23px;
+  border: 1px solid #686c60;
+  border-radius: 5px;
+  background: var(--room-floor);
+  font-size: 11px;
+}
+.house-objects {
+  color: #51574f;
+}
+.house-objects > span {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+.house-board {
+  max-width: 470px;
+  margin: 0 auto;
+}
+.house-board.is-dragging {
+  cursor: grabbing;
+}
+.house-board .cat-cell:has(.cat-token) {
+  touch-action: none;
+  cursor: grab;
+}
+.house-board.is-dragging .cat-cell:has(.cat-token) {
+  cursor: grabbing;
+}
+.remove-cat {
+  position: absolute;
+  top: 3px;
+  right: 3px;
+  z-index: 4;
+  width: 24px;
+  height: 24px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: #202526;
+  color: #fff;
+  border: 2px solid #fffdf4;
+}
+.remove-cat:hover { background: #ab3038; }
+.house-board .puzzle-grid {
+  gap: 0;
+}
+.house-board .room-cell {
+  border-style: solid;
+  border-color: #78796a;
+  border-radius: 0;
+  background: var(--room-floor);
+}
+.house-board .cell-coordinate {
+  color: #565b50;
+  font-size: 10px;
+}
+.cell-room-mark {
+  position: absolute;
+  bottom: 4px;
+  left: 6px;
+  font-size: 10px;
+  font-weight: 650;
+  color: #555b50;
+}
+.house-feature {
+  display: grid;
+  place-items: center;
+  color: #576052;
+}
+.house-feature > svg {
+  width: 32px;
+  height: 32px;
+}
+.house-feature.with-cat {
+  position: absolute;
+  right: 4px;
+  top: 4px;
+}
+.house-feature.with-cat > svg {
+  width: 15px;
+  height: 15px;
+}
+@media (max-width: 480px) {
+  .house-board .cat-token {
+    width: 40px;
+    height: 40px;
+  }
+  .house-board .cat-mark {
+    width: 16px;
+    height: 16px;
+    font-size: 10px;
+  }
+  .house-board .cell-coordinate {
+    top: 3px;
+    left: 4px;
+    font-size: 9px;
+  }
+  .cell-room-mark {
+    bottom: 2px;
+    left: 4px;
+  }
+  .house-feature > svg {
+    width: 26px;
+    height: 26px;
+  }
+}
+
+.focus-clue {
+  display: grid;
+  grid-template-columns: 44px minmax(0, 1fr) 44px;
+  align-items: center;
+  gap: 5px;
+  min-height: 100px;
+  margin-top: 10px;
+  padding: 6px;
+  border: 1px solid #a99c79;
+  border-radius: 10px;
+  background: #fffaf0;
+  font-size: 13px;
+  line-height: 1.45;
+}
+.focus-clue button {
+  display: grid;
+  place-items: center;
+  min-height: 44px;
+  border-radius: 7px;
+  background: transparent;
+}
+.focus-clue button:hover {
+  background: #eee6d5;
+}
+.focus-clue small {
+  display: block;
+  font-size: 11px;
+  color: #596164;
+  margin-bottom: 4px;
+}
+.focus-clue[data-status='violated'] {
+  border: 2px dashed #ab3038;
+}
+.focus-clue[data-status='satisfied'] {
+  border-color: #226846;
+}
+
+.placement-warning {
+  margin: 8px 0 0;
+  padding: 8px 10px;
+  border: 1px solid #c78179;
+  border-radius: 8px;
+  color: #8a2f2d;
+  background: #fff2ef;
+  font-size: 13px;
+  line-height: 1.35;
+}
+.house-board .placement-conflict {
+  box-shadow: inset 0 0 0 3px #ab3038;
+}
+.house-board .placement-conflict.selected-cat-cell {
+  box-shadow: inset 0 0 0 3px #ab3038, inset 0 0 0 5px #896237;
+}

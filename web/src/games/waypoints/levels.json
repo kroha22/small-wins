@@ -1,0 +1,100 @@
+[
+  {
+    "id": "tutorial",
+    "title": "Take a little walk",
+    "difficulty": "tutorial",
+    "contentVersion": 1,
+    "payload": {
+      "rows": 3,
+      "cols": 3,
+      "start": 0,
+      "target": 5,
+      "waypoints": [3, 7],
+      "blocked": [1, 2, 4]
+    }
+  },
+  {
+    "id": "level-1",
+    "title": "Scenic route",
+    "difficulty": "easy",
+    "contentVersion": 1,
+    "payload": {
+      "rows": 4,
+      "cols": 4,
+      "start": 0,
+      "target": 1,
+      "waypoints": [6, 7],
+      "blocked": [12, 13, 15]
+    }
+  },
+  {
+    "id": "level-2",
+    "title": "Three small stops",
+    "difficulty": "easy",
+    "contentVersion": 1,
+    "payload": {
+      "rows": 4,
+      "cols": 4,
+      "start": 0,
+      "target": 8,
+      "waypoints": [6, 15],
+      "blocked": [1, 2, 3, 13]
+    }
+  },
+  {
+    "id": "level-3",
+    "title": "The long way",
+    "difficulty": "medium",
+    "contentVersion": 1,
+    "payload": {
+      "rows": 5,
+      "cols": 5,
+      "start": 0,
+      "target": 14,
+      "waypoints": [4, 12, 18],
+      "blocked": [5, 10, 15, 20, 21, 22]
+    }
+  },
+  {
+    "id": "level-4",
+    "title": "A garden path",
+    "difficulty": "medium",
+    "contentVersion": 1,
+    "payload": {
+      "rows": 5,
+      "cols": 5,
+      "start": 0,
+      "target": 10,
+      "waypoints": [16, 14, 22],
+      "blocked": [2, 3, 4, 7, 8, 9, 18]
+    }
+  },
+  {
+    "id": "level-5",
+    "title": "Room for a detour",
+    "difficulty": "hard",
+    "contentVersion": 1,
+    "payload": {
+      "rows": 6,
+      "cols": 6,
+      "start": 0,
+      "target": 13,
+      "waypoints": [9, 5, 22, 19],
+      "blocked": [24, 30, 31, 34, 35]
+    }
+  },
+  {
+    "id": "level-6",
+    "title": "Homeward bound",
+    "difficulty": "hard",
+    "contentVersion": 1,
+    "payload": {
+      "rows": 6,
+      "cols": 6,
+      "start": 0,
+      "target": 34,
+      "waypoints": [2, 20, 3, 16],
+      "blocked": [5, 31]
+    }
+  }
+]

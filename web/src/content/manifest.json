@@ -1,0 +1,8 @@
+{
+  "schemaVersion": 1,
+  "rulesVersion": 1,
+  "generatorVersion": 2,
+  "seed": "small-wins/level-pack/1",
+  "games": ["purrdoku", "pipes", "untangle", "waypoints"],
+  "levelsPerGame": 7
+}

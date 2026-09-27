@@ -1,0 +1,29 @@
+.graph-node {
+  user-select: none;
+  -webkit-user-select: none;
+  cursor: grab;
+}
+.graph-node:active {
+  cursor: grabbing;
+}
+.graph-node.invalid-drop {
+  border-color: #ab3038;
+  outline-color: #ab3038;
+  border-style: dashed;
+}
+.drop-exclusion {
+  fill: #ab303812;
+  stroke: #ab3038;
+  stroke-width: 0.5;
+  stroke-dasharray: 1.5 1;
+}
+.untangle-feedback {
+  margin-top: 14px;
+  font-size: 14px;
+  line-height: 1.5;
+  min-height: 42px;
+}
+.untangle-feedback.blocked {
+  color: #8d2028;
+  font-weight: 600;
+}

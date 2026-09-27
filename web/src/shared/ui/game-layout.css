@@ -1,0 +1,152 @@
+.game-layout.with-aside {
+  display: block;
+  max-width: 1040px;
+}
+.board-with-clues {
+  display: grid;
+  grid-template-columns: minmax(0, 1.2fr) minmax(260px, 1fr);
+  gap: 0 28px;
+}
+.board-with-clues .board-content {
+  width: 100%;
+  margin: 0 auto;
+}
+.board-with-clues .clues-panel {
+  padding: 0;
+  align-self: start;
+  position: sticky;
+  top: 16px;
+}
+.board-with-clues .clues-panel h2 {
+  font-size: 20px;
+  letter-spacing: -0.4px;
+  margin: 0 0 6px;
+}
+.clue-help {
+  font-size: 12px;
+  color: #51594a;
+  line-height: 1.5;
+}
+.board-with-clues .clue-list {
+  margin: 12px 0 0;
+  gap: 7px;
+}
+.board-with-clues .clue-card {
+  font-size: 14px;
+  padding: 11px 12px;
+  min-height: 48px;
+  gap: 9px;
+}
+.board-with-clues .pinned-clue {
+  margin: 10px 0 0;
+}
+.game-actions {
+  grid-column: 1 / -1;
+}
+.game-actions {
+  margin-top: 18px;
+}
+.game-actions .board-toolbar {
+  margin-top: 0;
+}
+.game-actions .hint-card {
+  margin: 0 0 10px;
+}
+.game-actions .next-puzzle {
+  min-width: 126px;
+}
+.completion-summary {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  margin-bottom: 10px;
+  color: #225337;
+}
+.completion-summary .result-icon {
+  width: 26px;
+  height: 26px;
+}
+.completion-summary .result-icon svg {
+  width: 17px;
+}
+.completion-summary h2 {
+  font-size: 15px;
+  font-weight: 650;
+}
+@media (max-width: 760px) {
+  .board-with-clues {
+    display: block;
+  }
+  .board-with-clues .clues-panel {
+    position: static;
+    margin-top: 14px;
+  }
+  .board-with-clues .clues-panel h2 {
+    font-size: 18px;
+  }
+  .board-with-clues .clue-card {
+    padding: 9px 10px;
+    font-size: 13px;
+  }
+  .game-actions {
+    position: sticky;
+    bottom: 0;
+    z-index: 8;
+    background: #f7f4ed;
+    border: 1px solid #b5b8aa;
+    border-radius: 12px;
+    padding: 9px 8px calc(9px + env(safe-area-inset-bottom));
+    box-shadow: 0 -4px 16px #2025260d;
+  }
+  /* Purrdoku has a focused clue and cat tray immediately above the actions.
+     Keep its controls in flow so the first mobile viewport never covers a clue. */
+  .board-with-clues .game-actions {
+    position: static;
+    margin-top: 18px;
+  }
+  .game-actions .status-message {
+    margin: 0 0 8px;
+    min-height: 20px;
+  }
+  .game-actions .board-toolbar {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1.3fr;
+    padding: 0;
+    border: 0;
+    gap: 6px;
+  }
+  .game-actions .board-toolbar .button {
+    min-width: 0;
+    padding: 10px 6px;
+    font-size: 12px;
+    gap: 4px;
+  }
+  .game-actions .board-toolbar .button svg {
+    width: 16px;
+  }
+  .completion-summary {
+    margin-bottom: 7px;
+    gap: 7px;
+  }
+  .completion-summary h2 {
+    font-size: 13px;
+  }
+  .board-panel {
+    overflow: visible;
+  }
+  .game-actions .hint-card {
+    max-height: 130px;
+    overflow-y: auto;
+    padding: 10px;
+    font-size: 13px;
+  }
+  .play-page button[data-cell],
+  .play-page .clue-card {
+    scroll-margin-bottom: 115px;
+  }
+}
+
+.game-actions .board-toolbar.without-hint {
+  grid-template-columns: repeat(2, 1fr);
+}

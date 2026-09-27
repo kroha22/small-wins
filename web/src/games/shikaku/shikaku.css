@@ -1,0 +1,12 @@
+.shikaku-cell { position: relative; min-height: 84px; border: 1px solid var(--border); transition: background-color 180ms ease, box-shadow 180ms ease, transform 180ms ease; }
+.shikaku-cell.region-0, .clue-0 { --region: #e9a45f; background: color-mix(in srgb, var(--region) 24%, transparent); }
+.shikaku-cell.region-1, .clue-1 { --region: #84b9d8; background: color-mix(in srgb, var(--region) 24%, transparent); }
+.shikaku-cell.region-2, .clue-2 { --region: #d99ab5; background: color-mix(in srgb, var(--region) 24%, transparent); }
+.shikaku-cell.region-3, .clue-3 { --region: #8fc39a; background: color-mix(in srgb, var(--region) 24%, transparent); }
+.shikaku-cell.corner-selected { box-shadow: inset 0 0 0 3px var(--ink); }
+.shikaku-cell.preview-cell { background: color-mix(in srgb, var(--accent) 22%, white); transform: scale(.98); animation: shikaku-preview 180ms ease-out both; }
+.shikaku-cell strong { font-size: 1.4rem; }
+.clue-badge { display: inline-grid; place-items: center; width: 2.35rem; height: 2.35rem; border-radius: 999px; color: var(--ink); box-shadow: 0 3px 0 color-mix(in srgb, var(--region) 65%, transparent); }
+.shikaku-board { touch-action: none; }
+@keyframes shikaku-preview { from { opacity: .55; } to { opacity: 1; } }
+@media (prefers-reduced-motion: reduce) { .shikaku-cell { transition: none; animation: none; } }

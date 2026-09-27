@@ -1,0 +1,9 @@
+[
+ {"id":"tutorial","title":"A gentle rectangle","difficulty":"tutorial","contentVersion":1,"payload":{"rows":3,"cols":3,"clues":[{"cell":3,"area":2},{"cell":5,"area":4},{"cell":6,"area":2},{"cell":8,"area":1}],"initialRegions":[-1,-1,-1,-1,-1,-1,-1,-1,-1]}},
+ {"id":"level-1","title":"First tidy split","difficulty":"easy","contentVersion":1,"payload":{"rows":3,"cols":3,"clues":[{"cell":0,"area":1},{"cell":2,"area":2},{"cell":5,"area":3},{"cell":8,"area":3}],"initialRegions":[-1,-1,-1,-1,-1,-1,-1,-1,-1]}},
+ {"id":"level-2","title":"Three small spaces","difficulty":"easy","contentVersion":1,"payload":{"rows":3,"cols":3,"clues":[{"cell":2,"area":3},{"cell":3,"area":4},{"cell":5,"area":1},{"cell":8,"area":1}],"initialRegions":[-1,-1,-1,-1,-1,-1,-1,-1,-1]}},
+ {"id":"level-3","title":"Keep the edges neat","difficulty":"medium","contentVersion":1,"payload":{"rows":3,"cols":3,"clues":[{"cell":2,"area":6},{"cell":6,"area":1},{"cell":8,"area":2}],"initialRegions":[-1,-1,-1,-1,-1,-1,-1,-1,-1]}},
+ {"id":"level-4","title":"A balanced plan","difficulty":"medium","contentVersion":1,"payload":{"rows":3,"cols":3,"clues":[{"cell":2,"area":3},{"cell":5,"area":2},{"cell":7,"area":4}],"initialRegions":[-1,-1,-1,-1,-1,-1,-1,-1,-1]}},
+ {"id":"level-5","title":"Pack it cleanly","difficulty":"hard","contentVersion":1,"payload":{"rows":3,"cols":3,"clues":[{"cell":0,"area":6},{"cell":6,"area":1},{"cell":7,"area":1},{"cell":8,"area":1}],"initialRegions":[-1,-1,-1,-1,-1,-1,-1,-1,-1]}},
+ {"id":"level-6","title":"The final layout","difficulty":"hard","contentVersion":1,"payload":{"rows":3,"cols":3,"clues":[{"cell":0,"area":1},{"cell":1,"area":2},{"cell":5,"area":3},{"cell":8,"area":3}],"initialRegions":[-1,-1,-1,-1,-1,-1,-1,-1,-1]}}
+]

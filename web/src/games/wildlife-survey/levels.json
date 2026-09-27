@@ -1,0 +1,457 @@
+[
+ {
+  "id": "tutorial",
+  "title": "A gentle survey",
+  "difficulty": "tutorial",
+  "contentVersion": 1,
+  "payload": {
+   "rows": 5,
+   "cols": 5,
+   "theme": "Pond Life",
+   "rowCounts": [
+    3,
+    0,
+    0,
+    2,
+    0
+   ],
+   "colCounts": [
+    1,
+    1,
+    1,
+    1,
+    1
+   ],
+   "chains": [
+    {
+     "id": "pond-a",
+     "length": 3,
+     "species": "turtle"
+    },
+    {
+     "id": "pond-b",
+     "length": 2,
+     "species": "fish"
+    }
+   ],
+   "occupied": [
+    0,
+    1,
+    2,
+    18,
+    19
+   ],
+   "localOccupied": [
+    [
+     0,
+     1,
+     2,
+     18,
+     19
+    ],
+    [
+     5,
+     6,
+     7,
+     23,
+     24
+    ]
+   ]
+  }
+ },
+ {
+  "id": "level-1",
+  "title": "By the water",
+  "difficulty": "easy",
+  "contentVersion": 1,
+  "payload": {
+   "rows": 5,
+   "cols": 5,
+   "theme": "Pond Life",
+   "rowCounts": [
+    2,
+    1,
+    0,
+    1,
+    1
+   ],
+   "colCounts": [
+    1,
+    1,
+    1,
+    1,
+    1
+   ],
+   "chains": [
+    {
+     "id": "fish-a",
+     "length": 2,
+     "species": "fish"
+    },
+    {
+     "id": "fish-b",
+     "length": 3,
+     "species": "turtle"
+    }
+   ],
+   "occupied": [
+    0,
+    1,
+    12,
+    20,
+    23
+   ],
+   "localOccupied": [
+    [
+     0,
+     1,
+     12,
+     20,
+     23
+    ],
+    [
+     3,
+     4,
+     12,
+     17,
+     22
+    ]
+   ]
+  }
+ },
+ {
+  "id": "level-2",
+  "title": "Under the hedge",
+  "difficulty": "easy",
+  "contentVersion": 1,
+  "payload": {
+   "rows": 5,
+   "cols": 5,
+   "theme": "Burrows",
+   "rowCounts": [
+    1,
+    2,
+    0,
+    1,
+    1
+   ],
+   "colCounts": [
+    1,
+    1,
+    1,
+    1,
+    1
+   ],
+   "chains": [
+    {
+     "id": "hare-a",
+     "length": 2,
+     "species": "squirrel"
+    },
+    {
+     "id": "hare-b",
+     "length": 1,
+     "species": "rabbit"
+    },
+    {
+     "id": "hare-c",
+     "length": 1,
+     "species": "rabbit"
+    },
+    {
+     "id": "hare-d",
+     "length": 1,
+     "species": "rabbit"
+    }
+   ],
+   "occupied": [
+    4,
+    5,
+    6,
+    15,
+    24
+   ],
+   "localOccupied": [
+    [
+     4,
+     5,
+     6,
+     15,
+     24
+    ],
+    [
+     4,
+     5,
+     6,
+     15,
+     24
+    ]
+   ]
+  }
+ },
+ {
+  "id": "level-3",
+  "title": "A quiet pond",
+  "difficulty": "medium",
+  "contentVersion": 1,
+  "payload": {
+   "rows": 6,
+   "cols": 6,
+   "theme": "Pond Life",
+   "rowCounts": [
+    2,
+    0,
+    1,
+    1,
+    0,
+    2
+   ],
+   "colCounts": [
+    1,
+    1,
+    1,
+    1,
+    1,
+    1
+   ],
+   "chains": [
+    {
+     "id": "turtle-a",
+     "length": 2,
+     "species": "turtle"
+    },
+    {
+     "id": "turtle-b",
+     "length": 2,
+     "species": "turtle"
+    },
+    {
+     "id": "turtle-c",
+     "length": 2,
+     "species": "turtle"
+    }
+   ],
+   "occupied": [
+    0,
+    1,
+    14,
+    15,
+    28,
+    29
+   ],
+   "localOccupied": [
+    [
+     0,
+     1,
+     14,
+     15,
+     28,
+     29
+    ],
+    [
+     4,
+     5,
+     16,
+     17,
+     32,
+     33
+    ]
+   ]
+  }
+ },
+ {
+  "id": "level-4",
+  "title": "Under the roots",
+  "difficulty": "medium",
+  "contentVersion": 1,
+  "payload": {
+   "rows": 6,
+   "cols": 6,
+   "theme": "Burrows",
+   "rowCounts": [
+    1,
+    1,
+    2,
+    0,
+    1,
+    1
+   ],
+   "colCounts": [
+    1,
+    1,
+    1,
+    1,
+    1,
+    1
+   ],
+   "chains": [
+    {
+     "id": "track-a",
+     "length": 4,
+     "species": "squirrel"
+    },
+    {
+     "id": "track-b",
+     "length": 2,
+     "species": "squirrel"
+    }
+   ],
+   "occupied": [
+    0,
+    1,
+    13,
+    14,
+    28,
+    30
+   ],
+   "localOccupied": [
+    [
+     5,
+     6,
+     12,
+     21,
+     29,
+     35
+    ],
+    [
+     5,
+     6,
+     12,
+     21,
+     29,
+     34
+    ]
+   ]
+  }
+ },
+ {
+  "id": "level-5",
+  "title": "Deep water",
+  "difficulty": "hard",
+  "contentVersion": 1,
+  "payload": {
+   "rows": 6,
+   "cols": 6,
+   "theme": "Pond Life",
+   "rowCounts": [
+    2,
+    0,
+    1,
+    1,
+    1,
+    1
+   ],
+   "colCounts": [
+    1,
+    1,
+    1,
+    1,
+    1,
+    1
+   ],
+   "chains": [
+    {
+     "id": "den-a",
+     "length": 3,
+     "species": "turtle"
+    },
+    {
+     "id": "den-b",
+     "length": 3,
+     "species": "turtle"
+    }
+   ],
+   "occupied": [
+    0,
+    1,
+    14,
+    20,
+    28,
+    34
+   ],
+   "localOccupied": [
+    [
+     4,
+     11,
+     15,
+     21,
+     27,
+     34
+    ],
+    [
+     4,
+     10,
+     15,
+     21,
+     28,
+     34
+    ]
+   ]
+  }
+ },
+ {
+  "id": "level-6",
+  "title": "The hidden warren",
+  "difficulty": "hard",
+  "contentVersion": 1,
+  "payload": {
+   "rows": 6,
+   "cols": 6,
+   "theme": "Burrows",
+   "rowCounts": [
+    1,
+    2,
+    0,
+    1,
+    0,
+    2
+   ],
+   "colCounts": [
+    1,
+    1,
+    1,
+    1,
+    1,
+    1
+   ],
+   "chains": [
+    {
+     "id": "meadow-a",
+     "length": 4,
+     "species": "squirrel"
+    },
+    {
+     "id": "meadow-b",
+     "length": 2,
+     "species": "squirrel"
+    }
+   ],
+   "occupied": [
+    4,
+    6,
+    7,
+    18,
+    30,
+    32
+   ],
+   "localOccupied": [
+    [
+     5,
+     10,
+     16,
+     24,
+     29,
+     35
+    ],
+    [
+     5,
+     11,
+     16,
+     24,
+     29,
+     35
+    ]
+   ]
+  }
+ }
+]
