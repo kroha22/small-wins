@@ -12,7 +12,7 @@ A calm, cross-platform puzzle portfolio built around deterministic rules, gentle
 ![TypeScript](https://img.shields.io/badge/TypeScript-6-202624?logo=typescript&logoColor=3178C6)
 ![Kotlin Multiplatform](https://img.shields.io/badge/Kotlin-Multiplatform-202624?logo=kotlin&logoColor=7F52FF)
 ![Compose Multiplatform](https://img.shields.io/badge/Compose-Multiplatform-202624?logo=jetpackcompose&logoColor=4285F4)
-![Tests](https://img.shields.io/badge/tests-web%2061%20%7C%20mobile%2015-2F7D58)
+![Tests](https://img.shields.io/badge/tests-web%2061%20%7C%20mobile%2026-2F7D58)
 
 </div>
 
@@ -51,7 +51,7 @@ There are no timers, streaks, currencies, or locked levels. Progress is stored l
 
 ## Architecture
 
-The repository contains one complete web client and a deliberately smaller native vertical slice.
+The repository contains one complete web client and a focused native vertical slice for every mechanic.
 
 ```text
 web/
@@ -61,7 +61,7 @@ web/
   local progress and session state
 
 mobile/
-  shared/       pure Kotlin rules and catalog models
+  shared/       pure Kotlin rules, level packs, and seeded generators
   composeApp/   shared Android/iOS Compose UI
   androidApp/   thin Android host
   iosApp/       thin SwiftUI host
@@ -77,17 +77,20 @@ The Android and iOS clients use the same Kotlin Multiplatform and Compose Multip
 | --- | --- |
 | KMP project, Gradle wrapper, Android host, and iOS Xcode host | **Implemented** |
 | Shared Compose catalog for all six games | **Implemented** |
-| Shared deterministic Burrow Network engine | **Implemented** |
-| Burrow Network tutorial and first native level | **Implemented** |
-| Shared engine and catalog tests | **12 tests · JVM, Android host, iOS simulator** |
-| Shared Compose UI flows | **3 JVM UI tests** |
+| Shared deterministic engines for all six games | **Implemented in source** |
+| All 42 web levels available in the native catalog | **Implemented in source** |
+| Explicit seeded generators for all six mechanics | **Implemented in source** |
+| Local progress, active-session restore, reduced-motion setting, and local reset | **Implemented in source · batch verification pending** |
+| Progressive hints for the four web hint-enabled mechanics; Untangle and Habitat Search intentionally have no hint action | **Implemented in source · batch verification pending** |
+| Shared engine, level-pack, generator, and catalog tests | **21 verified · desktop, Android host, and iOS simulator targets** |
+| Shared Compose catalog, level selection, and game flows | **5 verified · desktop Compose UI tests** |
 | Android debug build | **Verified** |
 | iOS KMP device and simulator compilation | **Verified** |
-| iOS SwiftUI host build | **Verified** |
-| iOS simulator XCTest | **Pending** |
-| Purrdoku, Untangle, Waypoints, Shikaku, and Habitat Search | **Web only — native ports planned** |
+| iOS SwiftUI host build | **Verified · generic iOS Simulator destination** |
+| iOS simulator XCTest | **Test bundle verified · runtime blocked by local Simulator data migration** |
+| All six native game vertical slices | **Implemented** |
 
-The native scope stays intentionally honest: one mechanic is ported end to end before the remaining games are moved across.
+The native clients now carry the same seven-level pack for every mechanic as the web demo. A separate Fresh puzzle action creates deterministic variants from an explicit seed; authored levels remain unchanged.
 
 ## Web stack
 

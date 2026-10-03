@@ -73,28 +73,94 @@ object PipesEngine {
         val connections = connections(level, state)
         return connections.reached.size == level.ports.size && connections.leaks.isEmpty()
     }
+
+    fun hint(level: PipesLevel, state: PipesState, used: Int): String? {
+        val answer = PipesState(List(level.ports.size) { 0 })
+        val cell = level.ports.indices.firstOrNull {
+            portsAt(level, state, it).sorted() != portsAt(level, answer, it).sorted()
+        } ?: return null
+        val row = cell / level.cols + 1
+        val column = cell % level.cols + 1
+        if (used == 0) return "Look in row $row. One of its pipes needs a different turn in a working arrangement."
+        if (used == 1) return "Focus on the pipe at row $row, column $column. Its openings can be turned to join a complete network."
+        val turns = (4 - state.rotations[cell]) % 4
+        val turnText = when (turns) {
+            1 -> "clockwise once"
+            2 -> "clockwise twice"
+            3 -> "clockwise three times"
+            else -> "until it matches the working direction"
+        }
+        val directions = portsAt(level, answer, cell).map { listOf("up", "right", "down", "left")[it] }.joinToString(" and ")
+        return "One working arrangement: turn the pipe at row $row, column $column $turnText, so its openings face $directions."
+    }
 }
 
-val pipesTutorial = PipesLevel(
-    id = "tutorial",
-    title = "First flow",
-    rows = 2,
-    cols = 2,
-    sourceCell = 0,
-    ports = listOf(listOf(2), listOf(2), listOf(0, 1), listOf(3, 0)),
-    initialRotations = listOf(3, 0, 0, 0),
+private fun pipesLevel(id: String, title: String, size: Int, ports: List<List<Int>>, rotations: List<Int>) =
+    PipesLevel(id, title, size, size, 0, ports, rotations)
+
+val pipesLevels = listOf(
+    pipesLevel(
+        "tutorial", "First flow", 2,
+        listOf(listOf(2), listOf(2), listOf(0, 1), listOf(3, 0)),
+        listOf(3, 0, 0, 0),
+    ),
+    pipesLevel(
+        "level-1", "Around the bend", 3,
+        listOf(
+            listOf(1), listOf(3, 1), listOf(3, 2), listOf(1, 2), listOf(2, 3),
+            listOf(0, 2), listOf(0), listOf(1, 0), listOf(0, 3),
+        ),
+        listOf(0, 2, 0, 0, 2, 3, 1, 1, 2),
+    ),
+    pipesLevel(
+        "level-2", "Little loop", 3,
+        listOf(
+            listOf(2), listOf(1, 2), listOf(2, 3), listOf(0, 2), listOf(0),
+            listOf(2, 0), listOf(0, 1), listOf(3, 1), listOf(3, 0),
+        ),
+        listOf(1, 0, 0, 1, 3, 2, 2, 2, 1),
+    ),
+    pipesLevel(
+        "level-3", "Branching out", 4,
+        listOf(
+            listOf(1), listOf(3, 2), listOf(2, 1), listOf(3), listOf(1, 2), listOf(0, 3),
+            listOf(1, 0), listOf(2, 3), listOf(0, 1), listOf(3, 1), listOf(3, 2), listOf(2, 0),
+            listOf(1), listOf(1, 3), listOf(0, 1, 3), listOf(3, 0),
+        ),
+        listOf(2, 0, 1, 0, 1, 3, 2, 0, 1, 0, 0, 1, 1, 2, 0, 3),
+    ),
+    pipesLevel(
+        "level-4", "Water garden", 4,
+        listOf(
+            listOf(2), listOf(2, 1), listOf(3, 1), listOf(3, 2), listOf(0, 2), listOf(2, 0),
+            listOf(1, 2), listOf(0, 3), listOf(0, 2), listOf(2, 0), listOf(0, 2), listOf(2),
+            listOf(0, 1), listOf(3, 0), listOf(0, 1), listOf(3, 0),
+        ),
+        listOf(3, 2, 3, 0, 3, 3, 2, 1, 0, 2, 2, 2, 1, 3, 2, 2),
+    ),
+    pipesLevel(
+        "level-5", "Hidden current", 5,
+        listOf(
+            listOf(2), listOf(2, 1), listOf(3, 1), listOf(3, 1), listOf(3, 2),
+            listOf(0, 1), listOf(3, 0), listOf(2), listOf(1, 2), listOf(0, 3),
+            listOf(2), listOf(1, 2), listOf(2, 3, 0), listOf(0, 1), listOf(3, 2),
+            listOf(1, 2, 0), listOf(0, 3), listOf(2, 0), listOf(1, 2), listOf(0, 3),
+            listOf(0, 1), listOf(3), listOf(1, 0), listOf(0, 3, 1), listOf(3),
+        ),
+        listOf(3, 3, 2, 0, 1, 1, 0, 0, 1, 3, 1, 3, 3, 2, 1, 0, 1, 1, 1, 0, 0, 0, 1, 3, 2),
+    ),
+    pipesLevel(
+        "level-6", "Everything connects", 5,
+        listOf(
+            listOf(1), listOf(3, 1), listOf(3, 1), listOf(3, 2), listOf(2),
+            listOf(1, 2), listOf(2, 1, 3), listOf(3, 2), listOf(0, 1), listOf(3, 0, 2),
+            listOf(0, 2), listOf(2, 0), listOf(0, 1), listOf(3), listOf(0, 2),
+            listOf(0, 2), listOf(1, 0), listOf(1, 3), listOf(2, 3), listOf(0, 2),
+            listOf(0, 1), listOf(3, 1), listOf(3), listOf(1, 0), listOf(0, 3),
+        ),
+        listOf(1, 1, 0, 1, 1, 0, 1, 2, 3, 1, 0, 0, 1, 0, 2, 3, 0, 3, 3, 1, 2, 2, 3, 0, 2),
+    ),
 )
 
-val pipesLevelOne = PipesLevel(
-    id = "level-1",
-    title = "Around the bend",
-    rows = 3,
-    cols = 3,
-    sourceCell = 0,
-    ports = listOf(
-        listOf(1), listOf(3, 1), listOf(3, 2),
-        listOf(1, 2), listOf(2, 3), listOf(0, 2),
-        listOf(0), listOf(1, 0), listOf(0, 3),
-    ),
-    initialRotations = listOf(0, 2, 0, 0, 2, 3, 1, 1, 2),
-)
+val pipesTutorial = pipesLevels[0]
+val pipesLevelOne = pipesLevels[1]

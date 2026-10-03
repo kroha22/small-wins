@@ -29,7 +29,7 @@ function ChainLegend({ chains, theme }: { chains: { id: string; length: number; 
   const names = { fish: 'fish', turtle: 'turtles', squirrel: 'squirrels', rabbit: 'rabbits' };
   return <div className={`wildlife-chain-legend ${theme === 'Pond Life' ? 'pond-legend' : 'burrow-legend'}`} aria-label="Hidden habitats"><strong>{theme === 'Pond Life' ? 'Find these pond groups' : 'Find these wild groups'}</strong>{Object.entries(counts).sort(([a], [b]) => Number(a.split('-').at(-1)) - Number(b.split('-').at(-1))).map(([key, count]) => {
     const [species, length] = key.split('-') as [keyof typeof icons, string]; const size = Number(length); const Icon = icons[species];
-    return <span className={`chain-key ${chainColour(size)} species-${species}`} key={key}><i className="chain-shape">{Array.from({ length: Math.min(size, 4) }, (_, index) => <b key={index}><Icon size={19} strokeWidth={2} /></b>)}</i><span>{size} {names[species]}</span><small>× {count}</small></span>;
+    return <span className={`chain-key ${chainColour(size)} species-${species}`} key={key}><i className="chain-shape" aria-hidden="true"><b><Icon size={19} strokeWidth={2} /></b></i><span>{size} {names[species]}</span><small>× {count}</small></span>;
   })}</div>;
 }
 function speciesByCell(occupied: number[], chains: { length: number; species: 'fish'|'turtle'|'squirrel'|'rabbit' }[]) {

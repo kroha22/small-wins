@@ -13,9 +13,9 @@ class GameCatalogTest {
     }
 
     @Test
-    fun burrow_network_is_the_only_playable_native_vertical_slice() {
+    fun every_catalog_game_has_a_playable_native_vertical_slice() {
         val playable = portfolioGames.filter { it.nativeStatus == NativeStatus.PLAYABLE }
 
-        assertEquals(listOf("pipes"), playable.map { it.id })
+        assertEquals(portfolioGames.map { it.id }, playable.map { it.id })
     }
 }
