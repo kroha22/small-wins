@@ -331,7 +331,13 @@ private fun SettingsPage(
                     onCheckedChange = portfolio::setReduceMotion,
                     modifier = Modifier
                         .testTag("reduce-motion")
-                        .semantics { contentDescription = "Less movement" },
+                        .semantics {
+                            contentDescription = if (portfolio.settings.reduceMotion) {
+                                "Less movement on"
+                            } else {
+                                "Less movement off"
+                            }
+                        },
                 )
             }
         }
