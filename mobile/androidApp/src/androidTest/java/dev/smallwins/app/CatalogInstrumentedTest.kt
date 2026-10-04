@@ -1,9 +1,13 @@
 package dev.smallwins.app
 
 import android.content.Context
+import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsEnabled
+import androidx.compose.ui.test.assertIsOff
+import androidx.compose.ui.test.assertTextContains
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
+import androidx.compose.ui.test.onAllNodesWithTag
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
@@ -67,5 +71,54 @@ class CatalogInstrumentedTest {
         composeRule.onNodeWithText("1 / 9 connected").assertIsDisplayed()
         composeRule.onNodeWithText("Undo").performScrollTo().assertIsEnabled().performClick()
         composeRule.onNodeWithText("3 / 9 connected").assertIsDisplayed()
+    }
+
+    @Test
+    fun completedAttemptIsRecordedWithoutAContinueCard() {
+        composeRule.onNodeWithTag("game-catalog").performScrollToIndex(2)
+        composeRule.onNodeWithTag("game-pipes").performClick()
+        composeRule.onNodeWithTag("level-tutorial").performClick()
+
+        composeRule.onNodeWithTag("pipe-0").performClick()
+        composeRule.onNodeWithText("Everything connects.").performScrollTo().assertIsDisplayed()
+        composeRule.waitForIdle()
+
+        composeRule.onNodeWithTag("back-to-levels").performScrollTo().performClick()
+        composeRule.onNodeWithText("DONE").assertIsDisplayed()
+        composeRule.onNodeWithText("Back").performClick()
+
+        composeRule.onAllNodesWithTag("resume-attempt").assertCountEquals(0)
+        composeRule.onNodeWithTag("game-catalog").performScrollToIndex(2)
+        composeRule.onNodeWithText("1 / 7").assertIsDisplayed()
+    }
+
+    @Test
+    fun clearProgressRemovesCompletionsActiveAttemptAndSettings() {
+        composeRule.onNodeWithTag("game-catalog").performScrollToIndex(2)
+        composeRule.onNodeWithTag("game-pipes").performClick()
+        composeRule.onNodeWithTag("level-tutorial").performClick()
+        composeRule.onNodeWithTag("pipe-0").performClick()
+        composeRule.onNodeWithText("Everything connects.").performScrollTo().assertIsDisplayed()
+        composeRule.onNodeWithTag("back-to-levels").performScrollTo().performClick()
+
+        composeRule.onNodeWithTag("level-catalog").performScrollToIndex(2)
+        composeRule.onNodeWithTag("level-level-1").performClick()
+        composeRule.onNodeWithTag("pipe-0").performClick()
+        composeRule.onNodeWithTag("back-to-levels").performClick()
+        composeRule.onNodeWithText("Back").performClick()
+        composeRule.onNodeWithTag("resume-attempt").assertIsDisplayed()
+
+        composeRule.onNodeWithTag("game-catalog").performScrollToIndex(0)
+        composeRule.onNodeWithTag("settings").performClick()
+        composeRule.onNodeWithTag("reduce-motion").performClick()
+        composeRule.onNodeWithTag("clear-progress").performScrollTo().performClick()
+        composeRule.onNodeWithTag("confirm-clear-progress").performClick()
+
+        composeRule.onAllNodesWithTag("resume-attempt").assertCountEquals(0)
+        composeRule.onNodeWithTag("game-catalog").performScrollToIndex(2)
+        composeRule.onNodeWithTag("game-pipes").assertTextContains("0 / 7")
+        composeRule.onNodeWithTag("game-catalog").performScrollToIndex(0)
+        composeRule.onNodeWithTag("settings").performClick()
+        composeRule.onNodeWithTag("reduce-motion").assertIsOff()
     }
 }

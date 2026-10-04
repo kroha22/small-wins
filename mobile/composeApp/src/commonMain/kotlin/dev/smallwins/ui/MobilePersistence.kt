@@ -64,9 +64,14 @@ internal class MobilePortfolioState(private val storage: KeyValueStorage) {
 
     fun complete(gameId: String, levelId: String, moves: Int, assisted: Boolean) {
         val key = completionKey(gameId, levelId)
-        if (key in completed) return
-        completed = completed + (key to LevelCompletion(moves, assisted))
-        storage.write(COMPLETIONS_KEY, encodeCompletions(completed))
+        if (key !in completed) {
+            completed = completed + (key to LevelCompletion(moves, assisted))
+            storage.write(COMPLETIONS_KEY, encodeCompletions(completed))
+        }
+        if (activeAttempt?.let { it.gameId == gameId && it.levelId == levelId } == true) {
+            activeAttempt = null
+            storage.remove(ACTIVE_KEY)
+        }
     }
 
     fun clearAll() {
