@@ -34,6 +34,8 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.ExperimentalComposeUiApi
+import androidx.compose.ui.backhandler.BackHandler
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
@@ -75,11 +77,15 @@ private sealed interface Screen {
 }
 
 @Composable
+@OptIn(ExperimentalComposeUiApi::class)
 fun SmallWinsRoot() {
     val storage = rememberPlatformKeyValueStorage()
     val portfolio = remember(storage) { MobilePortfolioState(storage) }
     var screen: Screen by remember(portfolio) {
         mutableStateOf(portfolio.activeAttempt?.let(::screenForAttempt) ?: Screen.Catalog)
+    }
+    BackHandler(enabled = screen != Screen.Catalog) {
+        screen = parentScreen(screen)
     }
     MaterialTheme {
         Surface(modifier = Modifier.fillMaxSize(), color = Color(0xFFF8F5EF)) {
@@ -165,6 +171,17 @@ fun SmallWinsRoot() {
             }
         }
     }
+}
+
+private fun parentScreen(screen: Screen): Screen = when (screen) {
+    Screen.Catalog -> Screen.Catalog
+    Screen.Settings, is Screen.Levels -> Screen.Catalog
+    is Screen.Pipes -> Screen.Levels("pipes")
+    is Screen.Purrdoku -> Screen.Levels("purrdoku")
+    is Screen.Untangle -> Screen.Levels("untangle")
+    is Screen.Waypoints -> Screen.Levels("waypoints")
+    is Screen.Shikaku -> Screen.Levels("shikaku")
+    is Screen.Habitat -> Screen.Levels("wildlife-survey")
 }
 
 private data class LevelItem(val id: String, val title: String, val difficulty: String)

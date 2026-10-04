@@ -121,4 +121,60 @@ class CatalogInstrumentedTest {
         composeRule.onNodeWithTag("settings").performClick()
         composeRule.onNodeWithTag("reduce-motion").assertIsOff()
     }
+
+    @Test
+    fun systemBackReturnsFromPuzzleToLevelsThenCatalog() {
+        composeRule.onNodeWithTag("game-catalog").performScrollToIndex(2)
+        composeRule.onNodeWithTag("game-pipes").performClick()
+        composeRule.onNodeWithTag("level-tutorial").performClick()
+        composeRule.onNodeWithText("Burrow Network").assertIsDisplayed()
+
+        dispatchBack()
+        composeRule.onNodeWithTag("level-catalog").assertIsDisplayed()
+
+        dispatchBack()
+        composeRule.onNodeWithTag("game-catalog").assertIsDisplayed()
+    }
+
+    @Test
+    fun everyGameOpensItsTutorialOnDevice() {
+        listOf(
+            Triple("purrdoku", 1, "Purrdoku"),
+            Triple("pipes", 2, "Burrow Network"),
+            Triple("untangle", 3, "Untangle"),
+            Triple("waypoints", 4, "Waypoints"),
+            Triple("shikaku", 5, "Shikaku"),
+            Triple("wildlife-survey", 6, "Habitat Search"),
+        ).forEach { (gameId, catalogIndex, title) ->
+            composeRule.onNodeWithTag("game-catalog").performScrollToIndex(catalogIndex)
+            composeRule.onNodeWithTag("game-$gameId").performClick()
+            composeRule.onNodeWithTag("level-tutorial").performClick()
+            composeRule.onNodeWithText(title).assertIsDisplayed()
+            dispatchBack()
+            dispatchBack()
+        }
+    }
+
+    @Test
+    fun generatedPuzzleRestoresWithTheSameSeed() {
+        composeRule.onNodeWithTag("game-catalog").performScrollToIndex(2)
+        composeRule.onNodeWithTag("game-pipes").performClick()
+        composeRule.onNodeWithTag("level-catalog").performScrollToIndex(8)
+        composeRule.onNodeWithTag("generate-level").performClick()
+
+        composeRule.onNodeWithText("Fresh network").assertIsDisplayed()
+        composeRule.onNodeWithTag("pipe-0").performClick()
+        composeRule.activityRule.scenario.recreate()
+        composeRule.waitForIdle()
+
+        composeRule.onNodeWithText("Fresh network").assertIsDisplayed()
+        composeRule.onNodeWithText("Undo").performScrollTo().assertIsEnabled()
+    }
+
+    private fun dispatchBack() {
+        composeRule.activityRule.scenario.onActivity {
+            it.onBackPressedDispatcher.onBackPressed()
+        }
+        composeRule.waitForIdle()
+    }
 }

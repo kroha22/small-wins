@@ -241,7 +241,7 @@ internal fun decodePurrdoku(raw: String, level: PurrdokuLevel): PurrdokuState? {
 }
 
 internal fun encodeUntangle(state: UntangleState) = packFields(
-    state.positions.toSortedMap().flatMap { (id, point) -> listOf(id, point.x.toString(), point.y.toString()) },
+    state.positions.entries.sortedBy { it.key }.flatMap { (id, point) -> listOf(id, point.x.toString(), point.y.toString()) },
 )
 internal fun decodeUntangle(raw: String, level: UntangleLevel): UntangleState? {
     val fields = unpackFields(raw) ?: return null
@@ -319,7 +319,7 @@ private fun readAttempt(raw: String?): SavedAttempt? {
 }
 
 private fun encodeCompletions(completions: Map<String, LevelCompletion>) = packFields(
-    listOf("1") + completions.toSortedMap().flatMap { (key, result) ->
+    listOf("1") + completions.entries.sortedBy { it.key }.flatMap { (key, result) ->
         listOf(key, result.moves.toString(), result.assisted.toString())
     },
 )
