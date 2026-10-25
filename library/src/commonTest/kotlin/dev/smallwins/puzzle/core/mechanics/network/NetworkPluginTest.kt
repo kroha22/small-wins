@@ -30,6 +30,25 @@ class NetworkPluginTest {
     }
 
     @Test
+    fun solverHandlesAuthoredPiecesWhoseZeroRotationsAreNotTheAnswer() {
+        val generated = NetworkPlugin.generate(request)
+        val authored =
+            generated.level.copy(
+                payload =
+                    NetworkPayload(
+                        rows = 2,
+                        cols = 2,
+                        sourceCell = 0,
+                        ports = List(4) { listOf(0, 1) },
+                        initialRotations = listOf(0, 2, 0, 3),
+                    ),
+            )
+        val solution = NetworkPlugin.solve(authored)
+        assertTrue(solution != null)
+        assertTrue(NetworkPlugin.evaluate(authored, solution).solved)
+    }
+
+    @Test
     fun transitionDoesNotMutateInputState() {
         val generated = NetworkPlugin.generate(request)
         val state = NetworkPlugin.initialState(generated.level)

@@ -10,6 +10,7 @@ export default tseslint.config(
       'playwright-report/**',
       'test-results/**',
       'node_modules/**',
+      'src/generated/**',
     ],
   },
   js.configs.recommended,

@@ -1,5 +1,6 @@
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 import org.jetbrains.kotlin.gradle.dsl.JsModuleKind
+import org.jetbrains.kotlin.gradle.dsl.JsSourceMapEmbedMode
 
 plugins {
     kotlin("multiplatform") version "2.3.20"
@@ -32,6 +33,8 @@ kotlin {
         compilerOptions {
             moduleKind.set(JsModuleKind.MODULE_ES)
             target.set("es2015")
+            sourceMap.set(true)
+            sourceMapEmbedSources.set(JsSourceMapEmbedMode.SOURCE_MAP_SOURCE_CONTENT_INLINING)
         }
     }
 

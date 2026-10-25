@@ -100,12 +100,38 @@ fun evaluate(
     }
 
 @JsExport
+fun inspect(
+    mechanicId: String,
+    levelJson: String,
+    stateJson: String,
+): String =
+    when (canonicalMechanicId(mechanicId)) {
+        "network" -> {
+            val level = libraryJson.decodeFromString<NetworkLevel>(levelJson)
+            val state = libraryJson.decodeFromString<NetworkState>(stateJson)
+            libraryJson.encodeToString(NetworkPlugin.inspect(level, state))
+        }
+        else -> unsupported(mechanicId)
+    }
+
+@JsExport
 fun solve(
     mechanicId: String,
     levelJson: String,
 ): String =
     when (canonicalMechanicId(mechanicId)) {
         "network" -> libraryJson.encodeToString(NetworkPlugin.solve(libraryJson.decodeFromString<NetworkLevel>(levelJson)))
+        else -> unsupported(mechanicId)
+    }
+
+@JsExport
+fun solveWithBudget(
+    mechanicId: String,
+    levelJson: String,
+    budget: Int,
+): String =
+    when (canonicalMechanicId(mechanicId)) {
+        "network" -> libraryJson.encodeToString(NetworkPlugin.solveWithBudget(libraryJson.decodeFromString<NetworkLevel>(levelJson), budget))
         else -> unsupported(mechanicId)
     }
 

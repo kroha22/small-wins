@@ -5,7 +5,7 @@ test('completion shares the toolbar and next navigation works without scrolling 
   page,
   isMobile,
 }) => {
-  await page.goto('/games/pipes/levels/tutorial');
+  await page.goto('/#/games/pipes/levels/tutorial');
   await page.locator('[data-cell="0"]').click();
   const next = page.locator('.board-toolbar').getByRole('link', { name: 'Next puzzle' });
   await expect(next).toBeVisible();
@@ -32,7 +32,7 @@ test('Purrdoku keeps a browsable clue between the board and cats, with the full 
   page,
   isMobile,
 }) => {
-  await page.goto('/games/purrdoku/levels/level-3');
+  await page.goto('/#/games/purrdoku/levels/level-3');
   const focused = page.getByLabel('Clue beside the board');
   await expect(focused).toContainText('Clue 1 /');
   await focused.getByRole('button', { name: 'Next clue' }).click();
@@ -73,7 +73,7 @@ test('Waypoints uses a rabbit and striped blocked cells ignore pointer input whi
   page,
   isMobile,
 }) => {
-  await page.goto('/games/waypoints/levels/tutorial');
+  await page.goto('/#/games/waypoints/levels/tutorial');
   await expect(page.locator('[data-cell="0"] .route-start-icon')).toBeVisible();
   const carrot = page.locator('[data-cell="3"]');
   await expect(carrot).toHaveAccessibleName(/carrot, not collected/);

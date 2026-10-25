@@ -1,7 +1,7 @@
 import { test, expect } from '@playwright/test';
 
 test('draws a rectangle by dragging between opposite corners', async ({ page }) => {
-  await page.goto('/games/shikaku/levels/tutorial');
+  await page.goto('/#/games/shikaku/levels/tutorial');
   const cells = page.locator('.shikaku-cell');
   const from = (await cells.nth(3).boundingBox())!;
   const to = (await cells.nth(6).boundingBox())!;
@@ -14,7 +14,7 @@ test('draws a rectangle by dragging between opposite corners', async ({ page }) 
 });
 
 test('cancels a pending corner selection without adding a move', async ({ page }) => {
-  await page.goto('/games/shikaku/levels/tutorial');
+  await page.goto('/#/games/shikaku/levels/tutorial');
   const first = page.locator('.shikaku-cell').first();
   await first.click();
   await expect(first).toHaveClass(/corner-selected/);

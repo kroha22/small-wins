@@ -1,5 +1,6 @@
 import { z } from 'zod';
-import { accept, reject, cellName, type Engine } from '../../shared/lib/engine';
+import * as puzzleCore from '../../generated/puzzle-core/small-wins-puzzle-core.mjs';
+import { type Engine } from '../../shared/lib/engine';
 
 export const payloadSchema = z
   .object({
@@ -9,148 +10,139 @@ export const payloadSchema = z
     ports: z.array(z.array(z.number().int().min(0).max(3)).min(1).max(4)),
     initialRotations: z.array(z.number().int().min(0).max(3)),
   })
-  .superRefine((p, c) => {
+  .superRefine((payload, context) => {
     if (
-      p.ports.length !== p.rows * p.cols ||
-      p.initialRotations.length !== p.ports.length ||
-      p.sourceCell >= p.ports.length ||
-      p.ports.some((v) => new Set(v).size !== v.length)
-    )
-      c.addIssue({ code: 'custom', message: 'Invalid pipe grid' });
+      payload.ports.length !== payload.rows * payload.cols ||
+      payload.initialRotations.length !== payload.ports.length ||
+      payload.sourceCell >= payload.ports.length ||
+      payload.ports.some((ports) => new Set(ports).size !== ports.length)
+    ) {
+      context.addIssue({ code: 'custom', message: 'Invalid pipe grid' });
+    }
   });
+
 export type Payload = z.infer<typeof payloadSchema>;
 export type State = { rotations: number[] };
 export type Action = { type: 'rotate'; cell: number; quarterTurns: 1 | -1 };
-export const portsAt = (p: Payload, s: State, cell: number) =>
-  p.ports[cell]!.map((d) => (d + s.rotations[cell]!) % 4);
-export function adjacent(p: Payload, cell: number, dir: number): number | null {
-  const row = Math.floor(cell / p.cols),
-    col = cell % p.cols;
-  const dr = [-1, 0, 1, 0][dir]!,
-    dc = [0, 1, 0, -1][dir]!;
-  const r = row + dr,
-    c = col + dc;
-  return r < 0 || c < 0 || r >= p.rows || c >= p.cols ? null : r * p.cols + c;
-}
-export function connections(p: Payload, s: State) {
-  const reached = new Set<number>([p.sourceCell]);
-  const stack = [p.sourceCell];
-  while (stack.length) {
-    const cell = stack.pop()!;
-    for (const d of portsAt(p, s, cell)) {
-      const n = adjacent(p, cell, d);
-      if (n !== null && !reached.has(n) && portsAt(p, s, n).includes((d + 2) % 4)) {
-        reached.add(n);
-        stack.push(n);
-      }
-    }
-  }
-  const leaks = p.ports.flatMap((_, cell) =>
-    portsAt(p, s, cell)
-      .filter((d) => {
-        const n = adjacent(p, cell, d);
-        return n === null || !portsAt(p, s, n).includes((d + 2) % 4);
-      })
-      .map((dir) => ({ cell, dir })),
-  );
-  return { reached, leaks };
-}
-const stateSchema = z.object({ rotations: z.array(z.number().int().min(0).max(3)) });
-export const engine: Engine<Payload, State, Action> = {
-  initial: (p) => ({ rotations: [...p.initialRotations] }),
-  validState: (p, s): s is State => {
-    const v = stateSchema.safeParse(s);
-    return v.success && v.data.rotations.length === p.ports.length;
-  },
-  apply(p, s, a) {
-    if (
-      a.type !== 'rotate' ||
-      !Number.isInteger(a.cell) ||
-      !p.ports[a.cell] ||
-      ![1, -1].includes(a.quarterTurns)
-    )
-      return reject(s, 'Choose a pipe on the board.');
-    const rotations = [...s.rotations];
-    rotations[a.cell] = (rotations[a.cell]! + a.quarterTurns + 4) % 4;
-    const next = { rotations };
-    if (portsAt(p, s, a.cell).sort().join() === portsAt(p, next, a.cell).sort().join())
-      return accept(s, false);
-    return accept(next);
-  },
-  solved: (p, s) => {
-    const c = connections(p, s);
-    return c.reached.size === p.ports.length && c.leaks.length === 0;
-  },
-  hint: pipeHint,
+type CoreLevel = {
+  identity: {
+    mechanicId: 'network';
+    productGameId: 'pipes';
+    levelPackId: 'web-authored';
+    levelId: 'legacy-adapter';
+    schemaVersion: 1;
+    rulesVersion: 1;
+    contentVersion: 1;
+  };
+  difficulty: { band: 'medium'; normalized: 0.5; parameters: Record<string, never> };
+  payload: Payload;
+};
+type CoreTransition = {
+  accepted: boolean;
+  changed: boolean;
+  state: State;
+  reason?: string;
+};
+type CoreEvaluation = { solved: boolean };
+type CoreHint = {
+  kind: 'row' | 'cell' | 'orientation';
+  data: { cell: number; row: number; column: number; targetRotation?: number };
+};
+type CoreInspection = {
+  reached: number[];
+  leaks: { cell: number; direction: number }[];
 };
 
-// Constraint search over orientations; no authored answer is shipped to the UI.
-export function pipeSolution(p: Payload, budget = 20000): State | null {
-  const rotations = Array<number>(p.ports.length).fill(-1);
-  const options = p.ports.map((ports, cell) => {
-    const seen = new Set<string>();
-    return [0, 1, 2, 3].filter((r) => {
-      const dirs = ports.map((d) => (d + r) % 4).sort();
-      const key = dirs.join();
-      if (seen.has(key) || dirs.some((d) => adjacent(p, cell, d) === null)) return false;
-      seen.add(key);
-      return true;
-    });
-  });
-  let nodes = 0;
-  function search(): State | null {
-    if (++nodes > budget) return null;
-    let cell = -1,
-      candidates: number[] = [];
-    for (let i = 0; i < rotations.length; i++) {
-      if (rotations[i] !== -1) continue;
-      const valid = options[i]!.filter((r) =>
-        [0, 1, 2, 3].every((d) => {
-          const n = adjacent(p, i, d);
-          return (
-            n == null ||
-            rotations[n] === -1 ||
-            p.ports[i]!.some((v) => (v + r) % 4 === d) ===
-              p.ports[n]!.some((v) => (v + rotations[n]!) % 4 === (d + 2) % 4)
-          );
-        }),
-      );
-      if (!valid.length) return null;
-      if (cell === -1 || valid.length < candidates.length) {
-        cell = i;
-        candidates = valid;
-      }
+const encode = (value: unknown) => JSON.stringify(value);
+const decode = <T>(value: string): T => JSON.parse(value) as T;
+const coreLevel = (payload: Payload): CoreLevel => ({
+  identity: {
+    mechanicId: 'network',
+    productGameId: 'pipes',
+    levelPackId: 'web-authored',
+    levelId: 'legacy-adapter',
+    schemaVersion: 1,
+    rulesVersion: 1,
+    contentVersion: 1,
+  },
+  difficulty: { band: 'medium', normalized: 0.5, parameters: {} },
+  payload,
+});
+
+export const engine: Engine<Payload, State, Action> = {
+  initial: (payload) =>
+    decode<State>(puzzleCore.initialState('network', encode(coreLevel(payload)))),
+  validState: (payload, state): state is State => {
+    try {
+      return decode<{ valid: boolean }>(
+        puzzleCore.validateState('network', encode(coreLevel(payload)), encode(state)),
+      ).valid;
+    } catch {
+      return false;
     }
-    if (cell === -1) {
-      const state = { rotations: [...rotations] };
-      return engine.solved(p, state) ? state : null;
+  },
+  apply: (payload, state, action) => {
+    const result = decode<CoreTransition>(
+      puzzleCore.transition(
+        'network',
+        encode(coreLevel(payload)),
+        encode(state),
+        encode(action),
+      ),
+    );
+    return result.changed ? result : { ...result, state };
+  },
+  solved: (payload, state) =>
+    decode<CoreEvaluation>(
+      puzzleCore.evaluate('network', encode(coreLevel(payload)), encode(state)),
+    ).solved,
+  hint: (payload, state, used) => {
+    const result = decode<CoreHint | null>(
+      puzzleCore.hint('network', encode(coreLevel(payload)), encode(state), used),
+    );
+    if (!result) return null;
+    const { cell, row, column, targetRotation } = result.data;
+    if (result.kind === 'row') {
+      return `Look in row ${row + 1}. One of its pipes needs a different turn in a working arrangement.`;
     }
-    for (const r of candidates) {
-      rotations[cell] = r;
-      const answer = search();
-      if (answer) return answer;
-      if (nodes > budget) break;
+    if (result.kind === 'cell') {
+      return `Focus on the pipe at row ${row + 1}, column ${column + 1}. Its openings can be turned to join a complete network.`;
     }
-    rotations[cell] = -1;
-    return null;
-  }
-  return search();
+    const target = targetRotation ?? state.rotations[cell]!;
+    const turns = (target - state.rotations[cell]! + 4) % 4;
+    const direction = `clockwise ${turns === 1 ? 'once' : turns === 2 ? 'twice' : 'three times'}`;
+    const openings = payload.ports[cell]!
+      .map((value) => ['up', 'right', 'down', 'left'][(value + target) % 4])
+      .join(' and ');
+    return `One working arrangement: turn the pipe at row ${row + 1}, column ${column + 1} ${direction}, so its openings face ${openings}.`;
+  },
+};
+
+export const portsAt = (payload: Payload, state: State, cell: number) =>
+  payload.ports[cell]!.map((direction) => (direction + state.rotations[cell]!) % 4);
+
+export function adjacent(payload: Payload, cell: number, direction: number): number | null {
+  const row = Math.floor(cell / payload.cols);
+  const column = cell % payload.cols;
+  const nextRow = row + [-1, 0, 1, 0][direction]!;
+  const nextColumn = column + [0, 1, 0, -1][direction]!;
+  return nextRow < 0 || nextColumn < 0 || nextRow >= payload.rows || nextColumn >= payload.cols
+    ? null
+    : nextRow * payload.cols + nextColumn;
 }
-function pipeHint(p: Payload, s: State, used: number): string | null {
-  const answer = pipeSolution(p);
-  if (!answer) return null;
-  const cell = p.ports.findIndex(
-    (_, i) => portsAt(p, s, i).sort().join() !== portsAt(p, answer, i).sort().join(),
+
+export function connections(payload: Payload, state: State) {
+  const result = decode<CoreInspection>(
+    puzzleCore.inspect('network', encode(coreLevel(payload)), encode(state)),
   );
-  if (cell < 0) return null;
-  if (used === 0)
-    return `Look in row ${Math.floor(cell / p.cols) + 1}. One of its pipes needs a different turn in a working arrangement.`;
-  if (used === 1)
-    return `Focus on the pipe at ${cellName(cell, p.cols)}. Its openings can be turned to join a complete network.`;
-  const turns = (answer.rotations[cell]! - s.rotations[cell]! + 4) % 4;
-  const direction = `clockwise ${turns === 1 ? 'once' : turns === 2 ? 'twice' : 'three times'}`;
-  const openings = portsAt(p, answer, cell)
-    .map((d) => ['up', 'right', 'down', 'left'][d])
-    .join(' and ');
-  return `One working arrangement: turn the pipe at ${cellName(cell, p.cols)} ${direction}, so its openings face ${openings}.`;
+  return {
+    reached: new Set(result.reached),
+    leaks: result.leaks.map(({ cell, direction }) => ({ cell, dir: direction })),
+  };
+}
+
+export function pipeSolution(payload: Payload, budget = 20_000): State | null {
+  return decode<State | null>(
+    puzzleCore.solveWithBudget('network', encode(coreLevel(payload)), budget),
+  );
 }

@@ -5,7 +5,7 @@ for (const game of games)
   for (let index = 0; index < 7; index++) {
     const levelId = index === 0 ? 'tutorial' : `level-${index}`;
     test(`${game}/${levelId} is playable to completion`, async ({ page }) => {
-      await page.goto(`/games/${game}/levels/${levelId}`);
+      await page.goto(`/#/games/${game}/levels/${levelId}`);
       await expect(page.locator('.board-panel')).toBeVisible();
       if (game === 'purrdoku')
         for (const action of witnesses.purrdoku[index]!) {
@@ -37,7 +37,7 @@ for (const game of games)
       await expect(next).toBeVisible();
       await expect(next).toHaveAttribute(
         'href',
-        index === 6 ? '/' : `/games/${game}/levels/level-${index + 1}`,
+        index === 6 ? '/#/' : `/#/games/${game}/levels/level-${index + 1}`,
       );
       await expect(page.getByRole('button', { name: 'Hint', exact: true })).toHaveCount(0);
     });

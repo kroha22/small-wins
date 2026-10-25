@@ -19,7 +19,7 @@ test('a secondary pointer cannot steal a drag and release coordinates commit wit
   isMobile,
 }) => {
   test.skip(isMobile, 'Controlled pointer lifecycle uses an active native mouse gesture.');
-  await page.goto('/games/untangle/levels/level-4');
+  await page.goto('/#/games/untangle/levels/level-4');
   const board = await geometry(page);
   const node = page.locator('[data-node="B"]');
   const box = (await node.boundingBox())!;
@@ -59,7 +59,7 @@ test('off-centre dragging preserves the grab offset, commits once and survives r
     isMobile,
     'Native mouse dragging runs in Chromium and WebKit; taps have separate mobile coverage.',
   );
-  await page.goto('/games/untangle/levels/level-4');
+  await page.goto('/#/games/untangle/levels/level-4');
   const board = await geometry(page);
   const node = page.locator('[data-node="B"]');
   const box = (await node.boundingBox())!;
@@ -82,7 +82,7 @@ test('an invalid drop is marked before release and leaves history unchanged', as
   isMobile,
 }) => {
   test.skip(isMobile, 'Native mouse dragging runs in desktop projects.');
-  await page.goto('/games/untangle/levels/level-4');
+  await page.goto('/#/games/untangle/levels/level-4');
   await geometry(page);
   const node = page.locator('[data-node="B"]');
   const original = await node.getAttribute('aria-label');
@@ -106,7 +106,7 @@ test('D on level 2 continues after actual capture loss and commits exactly once'
   isMobile,
 }) => {
   test.skip(isMobile, 'Native mouse capture is exercised in desktop projects.');
-  await page.goto('/games/untangle/levels/level-2');
+  await page.goto('/#/games/untangle/levels/level-2');
   const board = await geometry(page);
   await page.locator('[data-node="A"]').click();
   await page.mouse.click(board.x + board.width * 0.371, board.y + board.height * 0.532);
@@ -133,7 +133,7 @@ test('explicit pointer cancellation still discards the preview and ignores a lat
   isMobile,
 }) => {
   test.skip(isMobile, 'Native mouse gesture with an injected cancellation.');
-  await page.goto('/games/untangle/levels/level-2');
+  await page.goto('/#/games/untangle/levels/level-2');
   const board = await geometry(page);
   const node = page.locator('[data-node="D"]');
   const original = await node.getAttribute('aria-label');
@@ -155,7 +155,7 @@ test('missing release uses the last preview rather than the later cursor positio
   isMobile,
 }) => {
   test.skip(isMobile, 'Mouse-button recovery is specific to mouse input.');
-  await page.goto('/games/untangle/levels/level-2');
+  await page.goto('/#/games/untangle/levels/level-2');
   const board = await geometry(page);
   const node = page.locator('[data-node="D"]');
   const from = (await node.boundingBox())!;
@@ -178,7 +178,7 @@ test('tap rejection can be exported and clearing diagnostics keeps progress', as
   page,
   isMobile,
 }) => {
-  await page.goto('/games/untangle/levels/level-4');
+  await page.goto('/#/games/untangle/levels/level-4');
   const node = page.locator('[data-node="B"]');
   if (isMobile) await node.tap();
   else await node.click();

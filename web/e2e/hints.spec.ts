@@ -3,7 +3,7 @@ import { test, expect } from '@playwright/test';
 test('Purrdoku adds four clues before exact spots, keeps the board unchanged and resumes the hint stage', async ({
   page,
 }) => {
-  await page.goto('/games/purrdoku/levels/tutorial');
+  await page.goto('/#/games/purrdoku/levels/tutorial');
   const hint = page.getByRole('button', { name: 'Hint', exact: true });
   const text = page.getByRole('region', { name: 'Hint', exact: true });
   await hint.click();
@@ -36,7 +36,7 @@ test('Pipes and Waypoints narrow the search before giving a concrete action', as
     ['pipes', ['Look in row', 'Focus on the pipe', 'One working arrangement: turn']],
     ['waypoints', ['Look toward row', 'Aim for', 'Next step: add']],
   ] as const) {
-    await page.goto(`/games/${game}/levels/tutorial`);
+    await page.goto(`/#/games/${game}/levels/tutorial`);
     for (const stage of stages) {
       await page.getByRole('button', { name: 'Hint', exact: true }).click();
       await expect(page.getByRole('region', { name: 'Hint', exact: true })).toContainText(stage);
@@ -48,7 +48,7 @@ test('Pipes and Waypoints narrow the search before giving a concrete action', as
 test('Untangle keeps rules and recovery controls without a placeholder hint button', async ({
   page,
 }) => {
-  await page.goto('/games/untangle/levels/tutorial');
+  await page.goto('/#/games/untangle/levels/tutorial');
   await expect(page.getByRole('button', { name: 'Hint', exact: true })).toHaveCount(0);
   await expect(page.getByRole('button', { name: 'Restart', exact: true })).toBeVisible();
   await page.getByRole('button', { name: 'How to play' }).click();

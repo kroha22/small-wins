@@ -50,7 +50,8 @@ data class NetworkLeak(
     val direction: Int,
 )
 
+@Serializable
 data class NetworkConnections(
-    val reached: Set<Int>,
+    val reached: List<Int>,
     val leaks: List<NetworkLeak>,
 )

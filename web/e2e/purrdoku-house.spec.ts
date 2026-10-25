@@ -5,7 +5,7 @@ import witnesses from '../scripts/fixtures/witnesses.json' with { type: 'json' }
 test('house rooms and objects remain readable and object cells stay blocked', async ({
   page,
 }, testInfo) => {
-  await page.goto('/games/purrdoku/levels/level-3');
+  await page.goto('/#/games/purrdoku/levels/level-3');
   await expect(page.getByLabel('Rooms and objects')).toContainText('kitchen');
   await expect(page.getByLabel('Rooms and objects')).toContainText('study');
   const window = page.locator('[data-cell="6"]');
@@ -54,7 +54,7 @@ test('old completion is retained but the new house puzzle needs a new completion
       );
     }
   });
-  await page.goto('/games/purrdoku?difficulty=all');
+  await page.goto('/#/games/purrdoku?difficulty=all');
   await expect(page.getByText('0 / 6 little wins')).toBeVisible();
   await expect(page.getByRole('link', { name: /Puzzle 01/ })).not.toContainText('Complete');
   await page.getByRole('link', { name: /Puzzle 01/ }).click();
@@ -78,7 +78,7 @@ test('old completion is retained but the new house puzzle needs a new completion
 });
 
 test('cats can move between cells and be dragged off the board', async ({ page }) => {
-  await page.goto('/games/purrdoku/levels/level-3');
+  await page.goto('/#/games/purrdoku/levels/level-3');
   const source = page.locator('[data-cell="2"]');
   await source.focus();
   await page.keyboard.press('Enter');

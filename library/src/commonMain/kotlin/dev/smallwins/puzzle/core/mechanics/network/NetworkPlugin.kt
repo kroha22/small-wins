@@ -73,16 +73,6 @@ object NetworkPlugin :
                 issues += ValidationIssue("ports.cell", "$.payload.ports[$cell]")
             }
         }
-        if (issues.isEmpty()) {
-            payload.ports.forEachIndexed { cell, ports ->
-                ports.forEach { direction ->
-                    val neighbour = adjacent(payload, cell, direction)
-                    if (neighbour == null || opposite(direction) !in payload.ports[neighbour]) {
-                        issues += ValidationIssue("ports.not-reciprocal", "$.payload.ports[$cell]")
-                    }
-                }
-            }
-        }
         return ValidationResult(issues.isEmpty(), issues.distinct())
     }
 
@@ -128,7 +118,7 @@ object NetworkPlugin :
         level: NetworkLevel,
         state: NetworkState,
     ): Evaluation<NetworkEvaluationMetrics> {
-        val connections = connections(level, state)
+        val connections = inspect(level, state)
         val solved = connections.reached.size == level.payload.ports.size && connections.leaks.isEmpty()
         return Evaluation(
             solved = solved,
@@ -209,10 +199,7 @@ object NetworkPlugin :
         )
     }
 
-    override fun solve(level: NetworkLevel): NetworkWitness? {
-        val state = NetworkState(List(level.payload.ports.size) { 0 })
-        return state.takeIf { evaluate(level, it).solved }
-    }
+    override fun solve(level: NetworkLevel): NetworkWitness? = solveWithBudget(level, 20_000)
 
     override fun hint(
         level: NetworkLevel,
@@ -235,6 +222,65 @@ object NetworkPlugin :
             data = kotlinx.serialization.json.JsonObject(data),
         )
     }
+
+    fun inspect(
+        level: NetworkLevel,
+        state: NetworkState,
+    ): NetworkConnections = connections(level, state)
+
+    fun solveWithBudget(
+        level: NetworkLevel,
+        budget: Int,
+    ): NetworkWitness? {
+        val rotations = MutableList(level.payload.ports.size) { -1 }
+        val options =
+            level.payload.ports.mapIndexed { cell, ports ->
+                val seen = mutableSetOf<List<Int>>()
+                (0..3).filter { rotation ->
+                    val directions = ports.map { (it + rotation) % 4 }.sorted()
+                    directions.none { adjacent(level.payload, cell, it) == null } && seen.add(directions)
+                }
+            }
+        var visited = 0
+
+        fun search(): NetworkState? {
+            visited += 1
+            if (visited > budget) return null
+            var selectedCell = -1
+            var selectedCandidates = emptyList<Int>()
+            rotations.indices.forEach { cell ->
+                if (rotations[cell] != -1) return@forEach
+                val candidates =
+                    options[cell].filter { rotation ->
+                        (0..3).all { direction ->
+                            val neighbour = adjacent(level.payload, cell, direction)
+                            neighbour == null ||
+                                rotations[neighbour] == -1 ||
+                                hasPort(level.payload.ports[cell], rotation, direction) ==
+                                hasPort(level.payload.ports[neighbour], rotations[neighbour], opposite(direction))
+                        }
+                    }
+                if (candidates.isEmpty()) return null
+                if (selectedCell == -1 || candidates.size < selectedCandidates.size) {
+                    selectedCell = cell
+                    selectedCandidates = candidates
+                }
+            }
+            if (selectedCell == -1) {
+                val state = NetworkState(rotations.toList())
+                return state.takeIf { evaluate(level, it).solved }
+            }
+            selectedCandidates.forEach { rotation ->
+                rotations[selectedCell] = rotation
+                search()?.let { return it }
+                if (visited > budget) return null
+            }
+            rotations[selectedCell] = -1
+            return null
+        }
+
+        return search()
+    }
 }
 
 fun portsAt(
@@ -255,7 +301,7 @@ fun adjacent(
     return if (nextRow !in 0 until payload.rows || nextColumn !in 0 until payload.cols) null else nextRow * payload.cols + nextColumn
 }
 
-fun connections(
+private fun connections(
     level: NetworkLevel,
     state: NetworkState,
 ): NetworkConnections {
@@ -278,7 +324,7 @@ fun connections(
                 if (neighbour == null || opposite(direction) !in portsAt(level, state, neighbour)) NetworkLeak(cell, direction) else null
             }
         }
-    return NetworkConnections(reached, leaks)
+    return NetworkConnections(reached.sorted(), leaks)
 }
 
 private data class Neighbour(val cell: Int, val direction: Int)
@@ -297,6 +343,12 @@ private fun neighbours(
 }
 
 private fun opposite(direction: Int) = (direction + 2) % 4
+
+private fun hasPort(
+    ports: List<Int>,
+    rotation: Int,
+    direction: Int,
+) = ports.any { (it + rotation) % 4 == direction }
 
 private fun sameOrientation(
     ports: List<Int>,
