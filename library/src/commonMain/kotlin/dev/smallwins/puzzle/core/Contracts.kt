@@ -158,9 +158,44 @@ interface ActivityPlugin<Level, State, Action, Witness, EvaluationMetrics, Gener
 
 @Serializable
 data class PuzzleSession<State>(
+    val schemaVersion: Int = SESSION_SCHEMA_VERSION,
     val identity: PuzzleIdentity,
+    val attemptId: String,
     val state: State,
+    val history: List<State> = emptyList(),
     val moveCount: Int,
-    val hintCount: Int,
-    val updatedAt: String,
+    val hintsUsed: Int,
+    val revision: Int,
+    val updatedAt: String? = null,
+)
+
+const val SESSION_SCHEMA_VERSION = 1
+const val MAX_SESSION_HISTORY = 20_000
+
+@Serializable
+enum class SessionRestoreReason {
+    @SerialName("missing-session")
+    MISSING_SESSION,
+
+    @SerialName("malformed-session")
+    MALFORMED_SESSION,
+
+    @SerialName("unsupported-schema")
+    UNSUPPORTED_SCHEMA,
+
+    @SerialName("incompatible-level")
+    INCOMPATIBLE_LEVEL,
+
+    @SerialName("invalid-metadata")
+    INVALID_METADATA,
+
+    @SerialName("invalid-state")
+    INVALID_STATE,
+}
+
+@Serializable
+data class SessionRestoreResult<State>(
+    val restored: Boolean,
+    val session: PuzzleSession<State>,
+    val reason: SessionRestoreReason? = null,
 )

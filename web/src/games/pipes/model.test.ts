@@ -49,4 +49,30 @@ describe('Pipes', () => {
     expect(t.state.rotations[0]).toBe(3);
     expect(s.rotations[0]).toBe(0);
   });
+  it('round-trips a portable session and rejects another content version', () => {
+    const level = {
+      id: 'portable',
+      title: 'Portable network',
+      difficulty: 'medium' as const,
+      contentVersion: 1,
+      payload: p,
+    };
+    const initial = engine.initial(p);
+    const moved = engine.apply(p, initial, { type: 'rotate', cell: 0, quarterTurns: 1 }).state;
+    const session = {
+      attemptId: 'web-test',
+      state: moved,
+      history: [initial],
+      moveCount: 1,
+      hintsUsed: 1,
+      revision: 1,
+    };
+
+    const encoded = engine.persistence!.encode(level, session);
+
+    expect(engine.persistence!.restore(level, encoded, 'fallback')).toEqual(session);
+    expect(
+      engine.persistence!.restore({ ...level, contentVersion: 2 }, encoded, 'fallback'),
+    ).toBeNull();
+  });
 });

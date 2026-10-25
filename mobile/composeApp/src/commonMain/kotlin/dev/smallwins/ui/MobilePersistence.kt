@@ -42,7 +42,19 @@ internal data class SavedAttempt(
     val history: List<String>,
     val moveCount: Int,
     val hintsUsed: Int,
+    val portableSession: String? = null,
 )
+
+internal interface PortableSessionAdapter<S : Any> {
+    fun encode(
+        state: S,
+        history: List<S>,
+        moveCount: Int,
+        hintsUsed: Int,
+    ): String
+
+    fun restore(raw: String): RestoredGameSession<S>?
+}
 
 internal class MobilePortfolioState(private val storage: KeyValueStorage) {
     var settings by mutableStateOf(MobileSettings(storage.read(SETTINGS_KEY) == "reduce-motion"))
@@ -198,25 +210,38 @@ internal fun <S : Any> rememberGameSession(
     initial: S,
     encode: (S) -> String,
     decode: (String) -> S?,
+    portable: PortableSessionAdapter<S>? = null,
 ): GameSessionState<S> {
     val attempt = portfolio.activeAttempt?.takeIf {
         it.gameId == gameId && it.levelId == levelId && it.generatedSeed == generatedSeed
     }
     val restored = remember(gameId, levelId, generatedSeed, attempt) {
         attempt?.let { saved ->
-            val state = decode(saved.state) ?: return@let null
-            val history = saved.history.map { decode(it) }
-            if (history.any { it == null }) null else RestoredGameSession(
-                state,
-                history.filterNotNull(),
-                saved.moveCount.coerceAtLeast(history.size),
-                saved.hintsUsed.coerceAtLeast(0),
-            )
+            if (saved.portableSession != null && portable != null) {
+                portable.restore(saved.portableSession)
+            } else {
+                val state = decode(saved.state) ?: return@let null
+                val history = saved.history.map { decode(it) }
+                if (history.any { it == null }) null else RestoredGameSession(
+                    state,
+                    history.filterNotNull(),
+                    saved.moveCount.coerceAtLeast(history.size),
+                    saved.hintsUsed.coerceAtLeast(0),
+                )
+            }
         }
     }
     val session = remember(gameId, levelId, generatedSeed) {
         GameSessionState(initial, restored, encode) { state, history, moves, hints ->
-            portfolio.saveAttempt(SavedAttempt(gameId, levelId, generatedSeed, state, history, moves, hints))
+            val portableSession = portable?.encode(
+                state = decode(state) ?: initial,
+                history = history.mapNotNull(decode),
+                moveCount = moves,
+                hintsUsed = hints,
+            )
+            portfolio.saveAttempt(
+                SavedAttempt(gameId, levelId, generatedSeed, state, history, moves, hints, portableSession),
+            )
         }
     }
     LaunchedEffect(session) { session.persist() }
@@ -303,19 +328,30 @@ private fun String.csvInts(): List<Int>? =
 
 private fun encodeAttempt(attempt: SavedAttempt) = packFields(
     listOf(
-        "1", attempt.gameId, attempt.levelId, attempt.generatedSeed.orEmpty(), attempt.state,
+        "2", attempt.gameId, attempt.levelId, attempt.generatedSeed.orEmpty(), attempt.state,
         attempt.moveCount.toString(), attempt.hintsUsed.toString(), attempt.history.size.toString(),
+        attempt.portableSession.orEmpty(),
     ) + attempt.history,
 )
 
 private fun readAttempt(raw: String?): SavedAttempt? {
     val fields = raw?.let(::unpackFields) ?: return null
-    if (fields.size < 8 || fields[0] != "1") return null
+    if (fields.size < 8 || fields[0] !in setOf("1", "2")) return null
     val moves = fields[5].toIntOrNull()?.takeIf { it >= 0 } ?: return null
     val hints = fields[6].toIntOrNull()?.takeIf { it >= 0 } ?: return null
     val historySize = fields[7].toIntOrNull()?.takeIf { it in 0..200 } ?: return null
-    if (fields.size != 8 + historySize) return null
-    return SavedAttempt(fields[1], fields[2], fields[3].ifEmpty { null }, fields[4], fields.drop(8), moves, hints)
+    val historyOffset = if (fields[0] == "2") 9 else 8
+    if (fields.size != historyOffset + historySize) return null
+    return SavedAttempt(
+        fields[1],
+        fields[2],
+        fields[3].ifEmpty { null },
+        fields[4],
+        fields.drop(historyOffset),
+        moves,
+        hints,
+        if (fields[0] == "2") fields[8].ifEmpty { null } else null,
+    )
 }
 
 private fun encodeCompletions(completions: Map<String, LevelCompletion>) = packFields(

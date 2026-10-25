@@ -8,6 +8,7 @@ import dev.smallwins.puzzle.core.mechanics.network.NetworkPlugin
 import dev.smallwins.puzzle.core.mechanics.network.NetworkState
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.encodeToString
+import kotlinx.serialization.builtins.ListSerializer
 
 @JsExport
 fun mechanicCatalogJson(): String = libraryJson.encodeToString(mechanicCatalog)
@@ -147,6 +148,79 @@ fun hint(
             val level = libraryJson.decodeFromString<NetworkLevel>(levelJson)
             val state = libraryJson.decodeFromString<NetworkState>(stateJson)
             libraryJson.encodeToString(NetworkPlugin.hint(level, state, used))
+        }
+        else -> unsupported(mechanicId)
+    }
+
+@JsExport
+fun freshSession(
+    mechanicId: String,
+    levelJson: String,
+    attemptId: String,
+): String =
+    when (canonicalMechanicId(mechanicId)) {
+        "network" -> {
+            val level = libraryJson.decodeFromString<NetworkLevel>(levelJson)
+            SessionCodec.encode(
+                SessionCodec.fresh(level.identity, NetworkPlugin.initialState(level), attemptId),
+                NetworkState.serializer(),
+            )
+        }
+        else -> unsupported(mechanicId)
+    }
+
+@JsExport
+fun encodeSession(
+    mechanicId: String,
+    levelJson: String,
+    attemptId: String,
+    stateJson: String,
+    historyJson: String,
+    moveCount: Int,
+    hintsUsed: Int,
+    revision: Int,
+): String =
+    when (canonicalMechanicId(mechanicId)) {
+        "network" -> {
+            val level = libraryJson.decodeFromString<NetworkLevel>(levelJson)
+            val session =
+                PuzzleSession(
+                    identity = level.identity,
+                    attemptId = attemptId,
+                    state = libraryJson.decodeFromString<NetworkState>(stateJson),
+                    history = libraryJson.decodeFromString(ListSerializer(NetworkState.serializer()), historyJson),
+                    moveCount = moveCount,
+                    hintsUsed = hintsUsed,
+                    revision = revision,
+                )
+            SessionCodec.encodeValidated(
+                session = session,
+                expectedIdentity = level.identity,
+                stateSerializer = NetworkState.serializer(),
+            ) { NetworkPlugin.validateState(level, it) }
+        }
+        else -> unsupported(mechanicId)
+    }
+
+@JsExport
+fun restoreSession(
+    mechanicId: String,
+    levelJson: String,
+    sessionJson: String?,
+    fallbackAttemptId: String,
+): String =
+    when (canonicalMechanicId(mechanicId)) {
+        "network" -> {
+            val level = libraryJson.decodeFromString<NetworkLevel>(levelJson)
+            val result =
+                SessionCodec.restore(
+                    expectedIdentity = level.identity,
+                    initialState = NetworkPlugin.initialState(level),
+                    raw = sessionJson,
+                    fallbackAttemptId = fallbackAttemptId,
+                    stateSerializer = NetworkState.serializer(),
+                ) { NetworkPlugin.validateState(level, it) }
+            libraryJson.encodeToString(SessionRestoreResult.serializer(NetworkState.serializer()), result)
         }
         else -> unsupported(mechanicId)
     }

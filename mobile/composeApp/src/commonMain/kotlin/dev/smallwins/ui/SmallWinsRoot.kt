@@ -438,6 +438,30 @@ private fun PipesGame(
     val session = rememberGameSession(
         portfolio, "pipes", level.id, generatedSeed, PipesEngine.initial(level),
         ::encodePipes, { decodePipes(it, level.ports.size) },
+        portable = object : PortableSessionAdapter<PipesState> {
+            private val attemptId = "mobile:pipes:${level.id}:${generatedSeed.orEmpty()}"
+
+            override fun encode(
+                state: PipesState,
+                history: List<PipesState>,
+                moveCount: Int,
+                hintsUsed: Int,
+            ) = PipesEngine.encodeSession(level, attemptId, state, history, moveCount, hintsUsed)
+
+            override fun restore(raw: String): RestoredGameSession<PipesState>? {
+                val restored = PipesEngine.restoreSession(level, raw, attemptId)
+                return if (restored.restored) {
+                    RestoredGameSession(
+                        restored.state,
+                        restored.history,
+                        restored.moveCount,
+                        restored.hintsUsed,
+                    )
+                } else {
+                    null
+                }
+            }
+        },
     )
     val state = session.state
     val connections = PipesEngine.connections(level, state)

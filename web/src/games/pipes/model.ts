@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import * as puzzleCore from '../../generated/puzzle-core/small-wins-puzzle-core.mjs';
-import { type Engine } from '../../shared/lib/engine';
+import { type Engine, type Level, type PortableSession } from '../../shared/lib/engine';
 
 export const payloadSchema = z
   .object({
@@ -28,13 +28,17 @@ type CoreLevel = {
   identity: {
     mechanicId: 'network';
     productGameId: 'pipes';
-    levelPackId: 'web-authored';
-    levelId: 'legacy-adapter';
+    levelPackId: string;
+    levelId: string;
     schemaVersion: 1;
     rulesVersion: 1;
-    contentVersion: 1;
+    contentVersion: number;
   };
-  difficulty: { band: 'medium'; normalized: 0.5; parameters: Record<string, never> };
+  difficulty: {
+    band: 'tutorial' | 'easy' | 'medium' | 'hard';
+    normalized: number;
+    parameters: Record<string, never>;
+  };
   payload: Payload;
 };
 type CoreTransition = {
@@ -52,6 +56,11 @@ type CoreInspection = {
   reached: number[];
   leaks: { cell: number; direction: number }[];
 };
+type CoreRestoreResult = {
+  restored: boolean;
+  session: PortableSession<State>;
+  reason?: string;
+};
 
 const encode = (value: unknown) => JSON.stringify(value);
 const decode = <T>(value: string): T => JSON.parse(value) as T;
@@ -67,6 +76,31 @@ const coreLevel = (payload: Payload): CoreLevel => ({
   },
   difficulty: { band: 'medium', normalized: 0.5, parameters: {} },
   payload,
+});
+
+const portableCoreLevel = (level: Level<Payload>): CoreLevel => ({
+  identity: {
+    mechanicId: 'network',
+    productGameId: 'pipes',
+    levelPackId: 'web-authored',
+    levelId: level.id,
+    schemaVersion: 1,
+    rulesVersion: 1,
+    contentVersion: level.contentVersion,
+  },
+  difficulty: {
+    band: level.difficulty,
+    normalized:
+      level.difficulty === 'tutorial'
+        ? 0
+        : level.difficulty === 'easy'
+          ? 0.25
+          : level.difficulty === 'hard'
+            ? 0.75
+            : 0.5,
+    parameters: {},
+  },
+  payload: level.payload,
 });
 
 export const engine: Engine<Payload, State, Action> = {
@@ -115,6 +149,39 @@ export const engine: Engine<Payload, State, Action> = {
       .map((value) => ['up', 'right', 'down', 'left'][(value + target) % 4])
       .join(' and ');
     return `One working arrangement: turn the pipe at row ${row + 1}, column ${column + 1} ${direction}, so its openings face ${openings}.`;
+  },
+  persistence: {
+    restore: (level, raw, fallbackAttemptId) => {
+      if (raw == null) return null;
+      try {
+        const result = decode<CoreRestoreResult>(
+          puzzleCore.restoreSession(
+            'network',
+            encode(portableCoreLevel(level)),
+            encode(raw),
+            fallbackAttemptId,
+          ),
+        );
+        if (!result.restored) return null;
+        const { attemptId, state, history, moveCount, hintsUsed, revision } = result.session;
+        return { attemptId, state, history, moveCount, hintsUsed, revision };
+      } catch {
+        return null;
+      }
+    },
+    encode: (level, session) =>
+      decode<unknown>(
+        puzzleCore.encodeSession(
+          'network',
+          encode(portableCoreLevel(level)),
+          session.attemptId,
+          encode(session.state),
+          encode(session.history),
+          session.moveCount,
+          session.hintsUsed,
+          session.revision,
+        ),
+      ),
   },
 };
 

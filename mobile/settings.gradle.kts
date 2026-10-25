@@ -24,3 +24,5 @@ rootProject.name = "Small Wins"
 include(":androidApp")
 include(":composeApp")
 include(":shared")
+
+includeBuild("../library")

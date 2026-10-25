@@ -11,12 +11,25 @@ export const metadataSchema = z.object({
 export type Metadata = z.infer<typeof metadataSchema>;
 export type Level<P> = Metadata & { payload: P };
 export type Transition<S> = { accepted: boolean; changed: boolean; state: S; reason?: string };
+export type PortableSession<S> = {
+  attemptId: string;
+  state: S;
+  history: S[];
+  moveCount: number;
+  hintsUsed: number;
+  revision: number;
+};
+export interface SessionPersistence<P, S> {
+  restore: (level: Level<P>, raw: unknown, fallbackAttemptId: string) => PortableSession<S> | null;
+  encode: (level: Level<P>, session: PortableSession<S>) => unknown;
+}
 export interface Engine<P, S, A> {
   initial: (level: P) => S;
   apply: (level: P, state: S, action: A) => Transition<S>;
   solved: (level: P, state: S) => boolean;
   validState: (level: P, state: unknown) => state is S;
   hint?: (level: P, state: S, used: number) => string | null;
+  persistence?: SessionPersistence<P, S>;
 }
 export const accept = <S>(state: S, changed = true): Transition<S> => ({
   accepted: true,

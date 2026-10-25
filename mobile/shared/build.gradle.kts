@@ -20,6 +20,9 @@ kotlin {
     iosSimulatorArm64()
 
     sourceSets {
+        commonMain.dependencies {
+            implementation("dev.smallwins:small-wins-puzzle-core:0.1.0")
+        }
         commonTest.dependencies {
             implementation(libs.kotlin.test)
         }

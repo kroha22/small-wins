@@ -26,34 +26,7 @@ object LevelGenerator {
     }
 
     fun pipes(seed: String): PipesLevel {
-        val random = StableRandom("pipes/$seed")
-        val size = 3 + random.nextInt(3)
-        val ports = List(size * size) { mutableListOf<Int>() }
-        val seen = mutableSetOf(0)
-        val stack = mutableListOf(0)
-        while (stack.isNotEmpty()) {
-            val cell = stack.last()
-            val options = random.shuffled(neighbours(cell, size, size).filterNot(seen::contains))
-            if (options.isEmpty()) {
-                stack.removeAt(stack.lastIndex)
-            } else {
-                val next = options.first()
-                val direction = when (next) {
-                    cell - size -> 0
-                    cell + 1 -> 1
-                    cell + size -> 2
-                    else -> 3
-                }
-                ports[cell] += direction
-                ports[next] += (direction + 2) % 4
-                seen += next
-                stack += next
-            }
-        }
-        val rotations = List(size * size) { random.nextInt(4) }.toMutableList()
-        val level = PipesLevel(generatedId("pipes", seed), "Fresh network", size, size, 0, ports, rotations)
-        if (PipesEngine.solved(level, PipesEngine.initial(level))) rotations[0] = (rotations[0] + 1) % 4
-        return level.copy(initialRotations = rotations.toList())
+        return PipesEngine.generate(seed)
     }
 
     fun untangle(seed: String): UntangleLevel {
@@ -122,14 +95,6 @@ object LevelGenerator {
             ),
             occupied = occupied,
         )
-    }
-
-    private fun neighbours(cell: Int, rows: Int, cols: Int): List<Int> {
-        val row = cell / cols
-        val column = cell % cols
-        return listOf(row - 1 to column, row to column + 1, row + 1 to column, row to column - 1)
-            .filter { (nextRow, nextColumn) -> nextRow in 0 until rows && nextColumn in 0 until cols }
-            .map { (nextRow, nextColumn) -> nextRow * cols + nextColumn }
     }
 
     private fun generatedId(gameId: String, seed: String) =

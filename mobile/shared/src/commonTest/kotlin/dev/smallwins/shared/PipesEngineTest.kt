@@ -107,4 +107,27 @@ class PipesEngineTest {
             assertTrue(level.initialRotations.all { it in 0..3 })
         }
     }
+
+    @Test
+    fun portable_session_restores_state_history_and_counters() {
+        val initial = PipesEngine.initial(pipesTutorial)
+        val moved = PipesEngine.rotate(pipesTutorial, initial, cell = 0)
+        val encoded = PipesEngine.encodeSession(
+            level = pipesTutorial,
+            attemptId = "mobile-test",
+            state = moved,
+            history = listOf(initial),
+            moveCount = 1,
+            hintsUsed = 2,
+        )
+
+        val restored = PipesEngine.restoreSession(pipesTutorial, encoded, "fallback")
+
+        assertTrue(restored.restored)
+        assertEquals(moved, restored.state)
+        assertEquals(listOf(initial), restored.history)
+        assertEquals(1, restored.moveCount)
+        assertEquals(2, restored.hintsUsed)
+        assertNull(restored.reason)
+    }
 }

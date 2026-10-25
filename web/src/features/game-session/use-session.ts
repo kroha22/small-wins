@@ -12,6 +12,14 @@ export function restoreSession<P, S, A>(
 ) {
   const raw = readRecord('active-attempt'),
     parsed = attemptSchema.safeParse(raw);
+  const portable = engine.persistence?.restore(level, raw, attemptId);
+  if (portable) {
+    return {
+      ...portable,
+      message: 'Your last puzzle is ready.',
+      hint: null,
+    };
+  }
   if (parsed.success) {
     const s = parsed.data;
     if (
@@ -46,14 +54,17 @@ export function useSession<P, S, A>(gameId: GameId, level: Level<P>, engine: Eng
   const complete = useProgress((s) => s.complete);
   const solved = engine.solved(level.payload, session.state);
   useEffect(() => {
-    writeRecord('active-attempt', {
-      schemaVersion: 1,
-      gameId,
-      levelId: level.id,
-      contentVersion: level.contentVersion,
-      ...session,
-    });
-  }, [gameId, level.id, level.contentVersion, session]);
+    writeRecord(
+      'active-attempt',
+      engine.persistence?.encode(level, session) ?? {
+        schemaVersion: 1,
+        gameId,
+        levelId: level.id,
+        contentVersion: level.contentVersion,
+        ...session,
+      },
+    );
+  }, [engine.persistence, gameId, level, session]);
   useEffect(() => {
     if (solved)
       complete(completionKey(gameId, level.id, level.contentVersion), {
