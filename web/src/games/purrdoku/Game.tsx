@@ -65,6 +65,7 @@ export default function Game({ levelId }: { levelId: string }) {
   function startDrag(event: ReactPointerEvent<HTMLButtonElement>, cat: CatId) {
     if (solved || event.button !== 0 || !event.isPrimary) return;
     event.preventDefault();
+    event.currentTarget.setPointerCapture(event.pointerId);
     drag.current = { cat, pointerId: event.pointerId };
     suppressClick.current = true;
     setDragging(cat);
@@ -72,8 +73,18 @@ export default function Game({ levelId }: { levelId: string }) {
   useEffect(() => {
     const finish = (event: PointerEvent) => {
       if (drag.current?.pointerId !== event.pointerId) return;
+      const board = boardRef.current;
       const target = document.elementFromPoint(event.clientX, event.clientY)?.closest<HTMLElement>('[data-cell]');
-      if (target && boardRef.current?.contains(target)) play({ type: 'placeCat', cat: drag.current.cat, cell: Number(target.dataset.cell) });
+      const bounds = board?.getBoundingClientRect();
+      const inside = bounds
+        && event.clientX >= bounds.left && event.clientX < bounds.right
+        && event.clientY >= bounds.top && event.clientY < bounds.bottom;
+      const coordinateCell = inside && bounds
+        ? Math.floor(((event.clientY - bounds.top) / bounds.height) * p.size) * p.size
+          + Math.floor(((event.clientX - bounds.left) / bounds.width) * p.size)
+        : null;
+      if (inside && target && board?.contains(target)) play({ type: 'placeCat', cat: drag.current.cat, cell: Number(target.dataset.cell) });
+      else if (inside && coordinateCell !== null) play({ type: 'placeCat', cat: drag.current.cat, cell: coordinateCell });
       else play({ type: 'removeCat', cat: drag.current.cat });
       drag.current = null;
       setDragging(null);
@@ -91,7 +102,7 @@ export default function Game({ levelId }: { levelId: string }) {
       window.removeEventListener('pointerup', finish);
       window.removeEventListener('pointercancel', cancelDrag);
     };
-  }, [play]);
+  }, [p.size, play]);
   const clueList = (
     <aside className="clues-panel" aria-label="Cat clues">
       <h2>Follow the clues.</h2>

@@ -41,7 +41,7 @@
   font-size: 11px;
 }
 .house-objects {
-  color: #51574f;
+  color: #18251c;
 }
 .house-objects > span {
   display: inline-flex;
@@ -87,7 +87,7 @@
   background: var(--room-floor);
 }
 .house-board .cell-coordinate {
-  color: #565b50;
+  color: #2f392f;
   font-size: 10px;
 }
 .cell-room-mark {
@@ -96,12 +96,12 @@
   left: 6px;
   font-size: 10px;
   font-weight: 650;
-  color: #555b50;
+  color: #2f392f;
 }
 .house-feature {
   display: grid;
   place-items: center;
-  color: #576052;
+  color: #303a32;
 }
 .house-feature > svg {
   width: 32px;
@@ -168,7 +168,7 @@
 .focus-clue small {
   display: block;
   font-size: 11px;
-  color: #596164;
+  color: #374342;
   margin-bottom: 4px;
 }
 .focus-clue[data-status='violated'] {

@@ -12,7 +12,7 @@ test('catalog, filters, settings focus and deep links', async ({ page }) => {
   await expect(
     page.getByRole('heading', { name: 'Small puzzles. Good little moments.' }),
   ).toBeVisible();
-  await expect(page.getByRole('link', { name: /Let’s play/ })).toHaveCount(4);
+  await expect(page.getByRole('link', { name: /Let’s play/ })).toHaveCount(6);
   const settings = page.getByRole('button', { name: 'Settings' });
   await settings.click();
   await expect(page.getByRole('dialog')).toBeVisible();
@@ -31,7 +31,7 @@ test('Purrdoku keyboard, invalid moves, hints, solve, undo and reload', async ({
   await page.keyboard.press('Enter');
   await page.getByRole('button', { name: 'Black cat, mark 2', exact: true }).click();
   await cell(page, 1);
-  await expect(page.getByRole('status')).toContainText('Only one cat');
+  await expect(page.getByRole('status')).toContainText('That spot belongs to an object');
   await cell(page, 4);
   await page.getByRole('button', { name: 'Hint', exact: true }).click();
   await page.getByRole('button', { name: 'Hint', exact: true }).click();
@@ -48,7 +48,16 @@ test('Purrdoku keyboard, invalid moves, hints, solve, undo and reload', async ({
 });
 test('Pipes tutorial and persistent completion', async ({ page }) => {
   await page.goto('/#/games/pipes/levels/tutorial');
-  for (const action of witnesses.pipes[0]!) await cell(page, action.cell);
+  const moves = witnesses.pipes[0]!;
+  await cell(page, moves[0]!.cell);
+  const saved = await page.evaluate(() =>
+    JSON.parse(localStorage.getItem('small-wins:v1:active-attempt')!),
+  );
+  expect(saved.identity.mechanicId).toBe('network');
+  expect(saved.moveCount).toBe(1);
+  await page.reload();
+  await expect(page.locator('.moves')).toHaveText('1moves');
+  for (const action of moves.slice(1)) await cell(page, action.cell);
   await expect(page.getByRole('region', { name: 'Puzzle complete' })).toBeVisible();
   await page.getByRole('link', { name: 'All Burrow Network puzzles' }).click();
   await expect(page.getByRole('link', { name: /A gentle start.*Complete/ })).toBeVisible();
@@ -106,7 +115,10 @@ test('home and four game boards have no automated accessibility violations or ov
   ]) {
     await page.goto(`/#${path}`);
     await expect(page.locator('h1')).toBeVisible();
-    if (path !== '/') await expect(page.locator('.board-panel')).toBeVisible();
+    if (path !== '/') {
+      await expect(page.locator('.board-panel')).toBeVisible();
+      await expect(page.locator('.board-content')).toHaveCSS('opacity', '1');
+    }
     const results = await new AxeBuilder({ page }).analyze();
     expect(results.violations).toEqual([]);
     expect(

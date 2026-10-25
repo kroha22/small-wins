@@ -636,7 +636,7 @@ button:not([class]) {
   font-size: 11px;
   font-weight: 550;
   margin-bottom: 17px;
-  color: #414e4d;
+  color: #263332;
 }
 .board-topline > span {
   display: flex;
@@ -776,7 +776,7 @@ button:not([class]) {
 .input-help {
   font-size: 12px;
   line-height: 1.55;
-  color: #46514f;
+  color: #273432;
   margin-top: 16px;
 }
 .cat-controls .input-help {

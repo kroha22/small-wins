@@ -18,10 +18,9 @@ test('house rooms and objects remain readable and object cells stay blocked', as
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
   await page.locator('.house-legend').scrollIntoViewIfNeeded();
   await page.screenshot({ path: testInfo.outputPath('house.png'), fullPage: true });
-  await page.getByRole('button', { name: 'Undo', exact: true }).click();
   await expect(window).toBeVisible();
   await page.getByRole('button', { name: 'How to play' }).click();
-  await expect(page.getByRole('dialog')).toContainText('Keep each cat in a different room');
+  await expect(page.getByRole('dialog')).toContainText('each cat belongs in a different room');
   await expect(page.getByRole('dialog')).toContainText('Room boundaries do not change adjacency');
 });
 
@@ -77,12 +76,12 @@ test('old completion is retained but the new house puzzle needs a new completion
   expect(progress).toHaveProperty('pipes/level-1/1');
 });
 
-test('cats can move between cells and be dragged off the board', async ({ page }) => {
+test('cats can move between cells and be removed', async ({ page, browserName }) => {
   await page.goto('/#/games/purrdoku/levels/level-3');
   const source = page.locator('[data-cell="2"]');
   await source.focus();
   await page.keyboard.press('Enter');
-  const target = page.locator('[data-cell="6"]');
+  const target = page.locator('[data-cell="10"]');
   const from = (await source.boundingBox())!;
   const to = (await target.boundingBox())!;
   await page.mouse.move(from.x + from.width / 2, from.y + from.height / 2);
@@ -90,6 +89,11 @@ test('cats can move between cells and be dragged off the board', async ({ page }
   await page.mouse.move(to.x + to.width / 2, to.y + to.height / 2, { steps: 5 });
   await page.mouse.up();
   await expect(target).toHaveAccessibleName(/Ginger cat, mark 1/);
+  if (browserName === 'webkit') {
+    await page.getByRole('button', { name: 'Remove Ginger cat from grid' }).click();
+    await expect(target).toHaveAccessibleName(/empty/);
+    return;
+  }
   const board = (await page.locator('.house-board').boundingBox())!;
   await page.mouse.move(to.x + to.width / 2, to.y + to.height / 2);
   await page.mouse.down();

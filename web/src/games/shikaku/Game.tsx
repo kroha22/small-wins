@@ -16,6 +16,7 @@ export default function Game({ levelId }: { levelId: string }) {
   const [anchor, setAnchor] = useState<number | null>(null);
   const [previewCell, setPreviewCell] = useState<number | null>(null);
   const anchorRef = useRef<number | null>(null);
+  const previewCellRef = useRef<number | null>(null);
   const dragging = useRef(false);
   const suppressClick = useRef(false);
   const p = level.payload;
@@ -71,6 +72,7 @@ export default function Game({ levelId }: { levelId: string }) {
           if (!cell) return;
           dragging.current = true;
           anchorRef.current = Number(cell.dataset.cell);
+          previewCellRef.current = anchorRef.current;
           setAnchor(anchorRef.current);
           setPreviewCell(anchorRef.current);
           event.currentTarget.setPointerCapture(event.pointerId);
@@ -78,19 +80,32 @@ export default function Game({ levelId }: { levelId: string }) {
         onPointerUp={(event) => {
           if (!dragging.current) return;
           const cell = document.elementFromPoint(event.clientX, event.clientY)?.closest<HTMLElement>('[data-cell]');
+          const bounds = event.currentTarget.getBoundingClientRect();
+          const inside = event.clientX >= bounds.left && event.clientX < bounds.right && event.clientY >= bounds.top && event.clientY < bounds.bottom;
+          const coordinateCell = inside
+            ? Math.floor(((event.clientY - bounds.top) / bounds.height) * p.rows) * p.cols
+              + Math.floor(((event.clientX - bounds.left) / bounds.width) * p.cols)
+            : null;
+          const releasedCell = cell && event.currentTarget.contains(cell)
+            ? Number(cell.dataset.cell)
+            : coordinateCell ?? previewCellRef.current;
           dragging.current = false;
-          if (cell && Number(cell.dataset.cell) === anchorRef.current) {
+          previewCellRef.current = null;
+          if (releasedCell === anchorRef.current) {
             suppressClick.current = false;
             return;
           }
           suppressClick.current = true;
-          if (cell && event.currentTarget.contains(cell)) choose(Number(cell.dataset.cell));
+          if (releasedCell !== null) choose(releasedCell);
           else { anchorRef.current = null; setAnchor(null); setPreviewCell(null); }
         }}
         onPointerMove={(event) => {
           if (!dragging.current) return;
           const cell = document.elementFromPoint(event.clientX, event.clientY)?.closest<HTMLElement>('[data-cell]');
-          if (cell && event.currentTarget.contains(cell)) setPreviewCell(Number(cell.dataset.cell));
+          if (cell && event.currentTarget.contains(cell)) {
+            previewCellRef.current = Number(cell.dataset.cell);
+            setPreviewCell(previewCellRef.current);
+          }
         }}
         onKeyDown={(event) => {
           if (event.key === 'Escape' && anchorRef.current !== null) {
@@ -100,7 +115,7 @@ export default function Game({ levelId }: { levelId: string }) {
             setPreviewCell(null);
           }
         }}
-        onPointerCancel={() => { dragging.current = false; anchorRef.current = null; setAnchor(null); setPreviewCell(null); }}
+        onPointerCancel={() => { dragging.current = false; anchorRef.current = null; previewCellRef.current = null; setAnchor(null); setPreviewCell(null); }}
       >
       <Grid rows={p.rows} cols={p.cols} label="Shikaku grid. Drag between two opposite corners to draw a rectangle.">
         {Array.from({ length: p.rows * p.cols }, (_, cell) => {
