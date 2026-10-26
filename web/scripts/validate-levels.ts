@@ -15,8 +15,6 @@ import pipeLevels from '../src/games/pipes/levels.json';
 import untangleLevels from '../src/games/untangle/levels.json';
 import waypointLevels from '../src/games/waypoints/levels.json';
 import shikakuLevels from '../src/games/shikaku/levels.json';
-import wildlifeLevels from '../src/games/wildlife-survey/levels.json';
-import * as wildlife from '../src/games/wildlife-survey/model';
 import witnesses from './fixtures/witnesses.json';
 import { catalog } from '../src/content/catalog';
 
@@ -117,15 +115,6 @@ validate(
 for (const level of z.array(metadataSchema.extend({ payload: shikaku.payloadSchema })).parse(shikakuLevels)) {
   assert.equal(shikaku.solutions(level.payload, 2).length, 1, `${level.id} unique`);
 }
-const wildlifePack = z.array(metadataSchema.extend({ payload: wildlife.payloadSchema })).parse(wildlifeLevels);
-assert.equal(wildlifePack.length, 7);
-for (const level of wildlifePack) {
-  let state = wildlife.engine.initial(level.payload);
-  for (let cell = 0; cell < level.payload.rows * level.payload.cols; cell++) {
-    state = wildlife.engine.apply(level.payload, state, { type: 'mark', cell, mark: level.payload.occupied.includes(cell) ? 'found' : 'empty' }).state;
-  }
-  assert.ok(wildlife.engine.solved(level.payload, state), `${level.id} wildlife witness must solve`);
-}
 console.log(
-  '42 level schemas, initial states and legal solution replays passed. All 7 Purrdoku and 7 Shikaku puzzles have exactly one solution.',
+  '35 level schemas, initial states and legal solution replays passed. All 7 Purrdoku and 7 Shikaku puzzles have exactly one solution.',
 );

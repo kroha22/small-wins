@@ -73,30 +73,6 @@ object LevelGenerator {
         return ShikakuLevel(generatedId("shikaku", seed), "Fresh layout", size, size, clues)
     }
 
-    fun habitat(seed: String): HabitatLevel {
-        val random = StableRandom("habitat/$seed")
-        val size = 5
-        val firstRow = random.nextInt(2)
-        val secondRow = 3 + random.nextInt(2)
-        val firstStart = random.nextInt(size - 2)
-        val secondStart = random.nextInt(size - 1)
-        val first = List(3) { firstRow * size + firstStart + it }
-        val second = List(2) { secondRow * size + secondStart + it }
-        val occupied = first + second
-        val theme = if (random.nextInt(2) == 0) "Pond Life" else "Burrows"
-        val species = if (theme == "Pond Life") "turtle" to "fish" else "squirrel" to "rabbit"
-        return HabitatLevel(
-            generatedId("habitat", seed), "Fresh survey", size, size, theme,
-            rowCounts = List(size) { row -> occupied.count { it / size == row } },
-            columnCounts = List(size) { column -> occupied.count { it % size == column } },
-            groups = listOf(
-                HabitatGroup("generated-a", 3, species.first),
-                HabitatGroup("generated-b", 2, species.second),
-            ),
-            occupied = occupied,
-        )
-    }
-
     private fun generatedId(gameId: String, seed: String) =
         "generated-${stableHash("v$VERSION/$gameId/$seed").toLong().toString(16)}"
     private fun tenth(value: Double) = (round(value * 10) / 10).toFloat()

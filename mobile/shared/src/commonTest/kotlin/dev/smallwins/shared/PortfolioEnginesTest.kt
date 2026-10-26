@@ -55,25 +55,6 @@ class PortfolioEnginesTest {
     }
 
     @Test
-    fun habitat_tutorial_completes_when_all_occupied_cells_are_found() {
-        var state = HabitatEngine.initial(habitatTutorial)
-        habitatTutorial.occupied.forEach { cell ->
-            state = HabitatEngine.mark(habitatTutorial, state, cell, HabitatMark.FOUND)
-        }
-
-        assertTrue(HabitatEngine.solved(habitatTutorial, state))
-    }
-
-    @Test
-    fun habitat_edge_clue_totals_match_the_authored_occupied_cells() {
-        listOf(habitatTutorial, habitatLevelOne).forEach { level ->
-            assertEquals(level.occupied.size, level.rowCounts.sum())
-            assertEquals(level.occupied.size, level.columnCounts.sum())
-            assertTrue(level.groups.sumOf { it.length } == level.occupied.size)
-        }
-    }
-
-    @Test
     fun every_first_level_has_an_explicit_solution_witness() {
         var cats = PurrdokuEngine.initial(purrdokuLevelOne)
         cats = PurrdokuEngine.place(purrdokuLevelOne, cats, CatId.WHITE, 0)
@@ -102,11 +83,6 @@ class PortfolioEnginesTest {
         }
         assertTrue(ShikakuEngine.solved(shikakuLevelOne, rectangles))
 
-        var habitat = HabitatEngine.initial(habitatLevelOne)
-        habitatLevelOne.occupied.forEach { cell ->
-            habitat = HabitatEngine.mark(habitatLevelOne, habitat, cell, HabitatMark.FOUND)
-        }
-        assertTrue(HabitatEngine.solved(habitatLevelOne, habitat))
     }
 
     @Test
@@ -114,7 +90,7 @@ class PortfolioEnginesTest {
         val ids = listOf("tutorial") + (1..6).map { "level-$it" }
         listOf(
             purrdokuLevels.map { it.id }, pipesLevels.map { it.id }, untangleLevels.map { it.id },
-            waypointsLevels.map { it.id }, shikakuLevels.map { it.id }, habitatLevels.map { it.id },
+            waypointsLevels.map { it.id }, shikakuLevels.map { it.id },
         ).forEach { assertEquals(ids, it) }
 
         purrdokuLevels.forEach { assertEquals(1, PurrdokuEngine.solutions(it).size) }
@@ -122,11 +98,6 @@ class PortfolioEnginesTest {
         untangleLevels.forEach { level -> assertTrue(UntangleEngine.solved(level, solvedUntangleState(level))) }
         waypointsLevels.forEach { level -> assertTrue(WaypointsEngine.completion(level, WaypointsEngine.initial(level)) != null) }
         shikakuLevels.forEach { assertEquals(1, ShikakuEngine.solutions(it).size) }
-        habitatLevels.forEach { level ->
-            assertEquals(level.occupied.size, level.rowCounts.sum())
-            assertEquals(level.occupied.size, level.columnCounts.sum())
-            assertEquals(level.occupied.size, level.groups.sumOf { it.length })
-        }
     }
 
     @Test
@@ -137,7 +108,6 @@ class PortfolioEnginesTest {
         assertEquals(LevelGenerator.untangle(seed), LevelGenerator.untangle(seed))
         assertEquals(LevelGenerator.waypoints(seed), LevelGenerator.waypoints(seed))
         assertEquals(LevelGenerator.shikaku(seed), LevelGenerator.shikaku(seed))
-        assertEquals(LevelGenerator.habitat(seed), LevelGenerator.habitat(seed))
 
         assertEquals(1, PurrdokuEngine.solutions(LevelGenerator.purrdoku(seed)).size)
         LevelGenerator.pipes(seed).let { level ->
@@ -149,11 +119,6 @@ class PortfolioEnginesTest {
             assertTrue(WaypointsEngine.completion(level, WaypointsEngine.initial(level)) != null)
         }
         assertEquals(1, ShikakuEngine.solutions(LevelGenerator.shikaku(seed)).size)
-        LevelGenerator.habitat(seed).let { level ->
-            var state = HabitatEngine.initial(level)
-            level.occupied.forEach { state = HabitatEngine.mark(level, state, it, HabitatMark.FOUND) }
-            assertTrue(HabitatEngine.solved(level, state))
-        }
     }
 
     @Test

@@ -51,15 +51,6 @@ const rules: Record<GameId, { name: string; items: string[] }> = {
       'Choose a different pair of corners if the rectangle is rejected. Undo removes the last region.',
     ],
   },
-  'wildlife-survey': {
-    name: 'Habitat Search',
-    items: [
-      'Search one of two habitats: Pond Life or Burrows.',
-      'Choose Observe to check a square, or Note to place a private × without changing the puzzle.',
-      'Solo Search gives you one board. Two players is a local pass-and-play match with a private board for each player.',
-      'The first player to find every hidden object wins. No network connection is needed.',
-    ],
-  },
 };
 export function RulesDialog({ gameId }: { gameId: GameId }) {
   const game = rules[gameId];

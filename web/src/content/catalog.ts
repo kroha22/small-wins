@@ -1,4 +1,4 @@
-import { Cat, Spline, Network, Route, Grid3X3, ScanSearch } from 'lucide-react';
+import { Cat, Spline, Network, Route, Grid3X3 } from 'lucide-react';
 import { type GameId } from '../shared/lib/engine';
 export const catalog = [
   {
@@ -56,17 +56,6 @@ export const catalog = [
     tags: 'Spatial · Packing',
     colour: 'yellow',
   },
-  {
-    id: 'wildlife-survey',
-    contentVersion: 1,
-    name: 'Habitat Search',
-    eyebrow: 'A pond or a burrow',
-    description: 'Look carefully, find what is hidden, and keep a little map of your search.',
-    rule: 'Observe the board and find every hidden fish or burrow.',
-    icon: ScanSearch,
-    tags: 'Observation · Logic',
-    colour: 'teal',
-  },
 ] as const;
 export function findGame(id: string) {
   return catalog.find((g) => g.id === id);
@@ -89,5 +78,4 @@ export const loaders: Record<
   untangle: () => import('../games/untangle/Game'),
   waypoints: () => import('../games/waypoints/Game'),
   shikaku: () => import('../games/shikaku/Game'),
-  'wildlife-survey': () => import('../games/wildlife-survey/Game'),
 };

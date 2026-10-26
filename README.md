@@ -12,7 +12,7 @@ A calm, cross-platform puzzle portfolio built around deterministic rules, gentle
 ![TypeScript](https://img.shields.io/badge/TypeScript-6-202624?logo=typescript&logoColor=3178C6)
 ![Kotlin Multiplatform](https://img.shields.io/badge/Kotlin-Multiplatform-202624?logo=kotlin&logoColor=7F52FF)
 ![Compose Multiplatform](https://img.shields.io/badge/Compose-Multiplatform-202624?logo=jetpackcompose&logoColor=4285F4)
-![Tests](https://img.shields.io/badge/tests-web%2061%20%7C%20mobile%2026-2F7D58)
+![Tests](https://img.shields.io/badge/tests-verified-2F7D58)
 
 </div>
 
@@ -28,7 +28,7 @@ A calm, cross-platform puzzle portfolio built around deterministic rules, gentle
 
 ## The collection
 
-Small Wins contains six independent games and 42 playable levels, including a gentle introduction for every mechanic.
+Small Wins contains five independent games and 35 playable levels, including a gentle introduction for every mechanic.
 
 | Game | Focus | Core interaction |
 | --- | --- | --- |
@@ -37,7 +37,6 @@ Small Wins contains six independent games and 42 playable levels, including a ge
 | **Untangle** | Spatial · Perspective | Move nodes until no lines cross, overlap, or touch another node. |
 | **Waypoints** | Planning · Discovery | Collect every carrot and reach the flag without revisiting a cell. |
 | **Shikaku** | Spatial · Packing | Divide the board into rectangles that match their clues. |
-| **Habitat Search** | Observation · Logic | Find every hidden group and keep a non-destructive map of the search. |
 
 There are no timers, streaks, currencies, or locked levels. Progress is stored locally and every game supports keyboard and pointer input.
 
@@ -76,19 +75,19 @@ The Android and iOS clients use the same Kotlin Multiplatform and Compose Multip
 | Area | Status |
 | --- | --- |
 | KMP project, Gradle wrapper, Android host, and iOS Xcode host | **Implemented** |
-| Shared Compose catalog for all six games | **Implemented** |
-| Shared deterministic engines for all six games | **Implemented in source** |
-| All 42 web levels available in the native catalog | **Implemented in source** |
-| Explicit seeded generators for all six mechanics | **Implemented in source** |
+| Shared Compose catalog for all five games | **Implemented** |
+| Shared deterministic engines for all five games | **Implemented in source** |
+| All 35 web levels available in the native catalog | **Implemented in source** |
+| Explicit seeded generators for all five mechanics | **Implemented in source** |
 | Local progress, active-session restore, reduced-motion setting, and local reset | **Implemented in source · batch verification pending** |
-| Progressive hints for the four web hint-enabled mechanics; Untangle and Habitat Search intentionally have no hint action | **Implemented in source · batch verification pending** |
-| Shared engine, level-pack, generator, and catalog tests | **21 verified · desktop, Android host, and iOS simulator targets** |
-| Shared Compose catalog, level selection, and game flows | **5 verified · desktop Compose UI tests** |
+| Progressive hints for the four web hint-enabled mechanics; Untangle intentionally has no hint action | **Implemented in source · batch verification pending** |
+| Shared engine, level-pack, generator, and catalog tests | **Verified · desktop JVM** |
+| Shared Compose catalog, level selection, and game flows | **Verified · desktop Compose UI tests** |
 | Android debug build | **Verified** |
 | iOS KMP device and simulator compilation | **Verified** |
 | iOS SwiftUI host build | **Verified · generic iOS Simulator destination** |
 | iOS simulator XCTest | **Test bundle verified · runtime blocked by local Simulator data migration** |
-| All six native game vertical slices | **Implemented** |
+| All five native game vertical slices | **Implemented** |
 
 The native clients now carry the same seven-level pack for every mechanic as the web demo. A separate Fresh puzzle action creates deterministic variants from an explicit seed; authored levels remain unchanged.
 

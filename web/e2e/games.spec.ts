@@ -2,7 +2,6 @@ import { test, expect, type Page } from '@playwright/test';
 import AxeBuilder from '@axe-core/playwright';
 import witnesses from '../scripts/fixtures/witnesses.json' with { type: 'json' };
 import graphLevels from '../src/games/untangle/levels.json' with { type: 'json' };
-import habitatLevels from '../src/games/wildlife-survey/levels.json' with { type: 'json' };
 async function cell(page: Page, index: number) {
   const target = page.locator(`[data-cell="${index}"]`);
   if (test.info().project.name === 'mobile') await target.tap();
@@ -13,7 +12,7 @@ test('catalog, filters, settings focus and deep links', async ({ page }) => {
   await expect(
     page.getByRole('heading', { name: 'Small puzzles. Good little moments.' }),
   ).toBeVisible();
-  await expect(page.getByRole('link', { name: /Let’s play/ })).toHaveCount(6);
+  await expect(page.getByRole('link', { name: /Let’s play/ })).toHaveCount(5);
   await expect(page.getByRole('link', { name: /Where Was the Cat\?/ })).toBeVisible();
   const settings = page.getByRole('button', { name: 'Settings' });
   await settings.click();
@@ -107,33 +106,6 @@ test('Untangle drag cancellation never commits a preview', async ({ page, isMobi
   await page.mouse.up();
   await expect(page.locator('.moves')).toHaveText('0moves');
 });
-test('Habitat Search restores solo progress and keeps local player boards private', async ({ page }) => {
-  await page.goto('/#/games/wildlife-survey/levels/tutorial');
-  await expect(page.getByRole('button', { name: 'Observe', exact: true })).toHaveAttribute('aria-pressed', 'true');
-  await page.getByRole('button', { name: 'Note ×', exact: true }).click();
-  await expect(page.getByRole('button', { name: 'Note ×', exact: true })).toHaveAttribute('aria-pressed', 'true');
-  await cell(page, 1);
-  await page.getByRole('button', { name: 'Observe', exact: true }).click();
-  await cell(page, 0);
-  const saved = await page.evaluate(() =>
-    JSON.parse(localStorage.getItem('small-wins:v1:active-attempt')!),
-  );
-  expect(saved.identity.mechanicId).toBe('habitat-search');
-  await page.reload();
-  await expect(page.getByRole('button', { name: /row 1, column 1, found/i })).toBeVisible();
-  await expect(page.getByRole('button', { name: /row 1, column 2, noted/i })).toBeVisible();
-  for (const occupied of habitatLevels[0]!.payload.occupied.slice(1)) await cell(page, occupied);
-  await expect(page.getByRole('region', { name: 'Puzzle complete' })).toBeVisible();
-
-  await page.getByRole('button', { name: 'Play Together' }).click();
-  await cell(page, 0);
-  await page.getByRole('button', { name: 'Pass device' }).click();
-  await expect(page.getByText("Player 2's survey")).toBeVisible();
-  await expect(page.getByRole('button', { name: /row 1, column 1, unobserved/i })).toBeVisible();
-  await cell(page, 5);
-  await page.getByRole('button', { name: 'Pass device' }).click();
-  await expect(page.getByRole('button', { name: /row 1, column 1, found/i })).toBeVisible();
-});
 test('home and all game boards have no automated accessibility violations or overflow', async ({
   page,
 }) => {
@@ -145,7 +117,6 @@ test('home and all game boards have no automated accessibility violations or ove
     '/games/untangle/levels/tutorial',
     '/games/waypoints/levels/tutorial',
     '/games/shikaku/levels/tutorial',
-    '/games/wildlife-survey/levels/tutorial',
   ]) {
     await page.goto(`/#${path}`);
     await expect(page.locator('h1')).toBeVisible();

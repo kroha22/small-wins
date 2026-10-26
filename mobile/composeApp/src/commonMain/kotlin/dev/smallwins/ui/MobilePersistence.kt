@@ -7,8 +7,6 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import dev.smallwins.shared.CatId
-import dev.smallwins.shared.HabitatMark
-import dev.smallwins.shared.HabitatState
 import dev.smallwins.shared.PipesState
 import dev.smallwins.shared.PurrdokuLevel
 import dev.smallwins.shared.PurrdokuState
@@ -21,7 +19,6 @@ import dev.smallwins.shared.UntangleState
 import dev.smallwins.shared.WaypointsState
 import dev.smallwins.shared.WaypointsLevel
 import dev.smallwins.shared.WaypointsEngine
-import dev.smallwins.shared.HabitatLevel
 
 internal interface KeyValueStorage {
     fun read(key: String): String?
@@ -301,26 +298,6 @@ internal fun decodeShikaku(raw: String, level: ShikakuLevel): ShikakuState? {
         if (cells.size != clue.area || clue.cell !in cells || ShikakuEngine.rectangleCells(level, topLeft, bottomRight) != cells.toSet()) return null
     }
     return state
-}
-
-internal data class HabitatSessionState(val game: HabitatState, val notes: Set<Int>)
-internal fun encodeHabitat(state: HabitatSessionState) = packFields(
-    listOf(state.game.marks.joinToString(",") { it.name }, state.notes.sorted().joinToString(",")),
-)
-internal fun decodeHabitat(raw: String, level: HabitatLevel): HabitatSessionState? {
-    val expectedSize = level.rows * level.cols
-    val fields = unpackFields(raw)?.takeIf { it.size == 2 } ?: return null
-    val marks = fields[0].split(',').map { runCatching { HabitatMark.valueOf(it) }.getOrNull() }
-    if (marks.size != expectedSize || marks.any { it == null }) return null
-    val notes = if (fields[1].isBlank()) emptySet() else fields[1].csvInts()?.toSet() ?: return null
-    if (notes.any { it !in 0 until expectedSize }) return null
-    val validMarks = marks.filterNotNull()
-    if (validMarks.indices.any { cell ->
-            (validMarks[cell] == HabitatMark.FOUND && cell !in level.occupied) ||
-                (validMarks[cell] == HabitatMark.EMPTY && cell in level.occupied)
-        }
-    ) return null
-    return HabitatSessionState(HabitatState(validMarks), notes)
 }
 
 private fun String.csvInts(): List<Int>? =

@@ -6,8 +6,8 @@ import kotlin.test.assertTrue
 
 class GameCatalogTest {
     @Test
-    fun catalog_contains_six_unique_games() {
-        assertEquals(6, portfolioGames.size)
+    fun catalog_contains_five_unique_games() {
+        assertEquals(5, portfolioGames.size)
         assertEquals(portfolioGames.size, portfolioGames.map { it.id }.toSet().size)
         assertTrue(portfolioGames.all { it.id.isNotBlank() && it.name.isNotBlank() })
     }

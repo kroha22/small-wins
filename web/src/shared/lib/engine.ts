@@ -1,6 +1,6 @@
 import { z } from 'zod';
 
-export const gameIds = ['purrdoku', 'pipes', 'untangle', 'waypoints', 'shikaku', 'wildlife-survey'] as const;
+export const gameIds = ['purrdoku', 'pipes', 'untangle', 'waypoints', 'shikaku'] as const;
 export type GameId = (typeof gameIds)[number];
 export const metadataSchema = z.object({
   id: z.string(),

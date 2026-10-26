@@ -20,7 +20,6 @@ const gameComponents = {
   untangle: lazy(loaders.untangle),
   waypoints: lazy(loaders.waypoints),
   shikaku: lazy(loaders.shikaku),
-  'wildlife-survey': lazy(loaders['wildlife-survey']),
 };
 function FocusHeading() {
   const path = useRouterState({ select: (s) => s.location.pathname });
@@ -105,7 +104,7 @@ export function Home() {
             <span>Good little moments.</span>
           </h1>
           <p className="hero-copy">
-            Six small games. One satisfying break. <br />
+            Five small games. One satisfying break. <br />
             Settle in, follow your curiosity, and find your next small win.
           </p>
         </div>

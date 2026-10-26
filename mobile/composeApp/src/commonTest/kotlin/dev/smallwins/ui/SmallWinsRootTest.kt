@@ -1,7 +1,6 @@
 package dev.smallwins.ui
 
 import androidx.compose.ui.test.ExperimentalTestApi
-import androidx.compose.ui.test.assertDoesNotExist
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
@@ -63,7 +62,6 @@ class SmallWinsRootTest {
             "untangle" to "Untangle",
             "waypoints" to "Waypoints",
             "shikaku" to "Shikaku",
-            "wildlife-survey" to "Habitat Search",
         ).forEachIndexed { index, (id, title) ->
             onNodeWithTag("game-catalog").performScrollToIndex(if (index == 0) 1 else index + 2)
             onNodeWithTag("game-$id").performClick()
@@ -96,14 +94,4 @@ class SmallWinsRootTest {
         onNodeWithTag("confirm-clear-progress").assertIsDisplayed()
     }
 
-    @Test
-    fun habitat_matches_web_by_not_offering_a_hint_action() = runComposeUiTest {
-        setContent { SmallWinsRoot() }
-
-        onNodeWithTag("game-catalog").performScrollToIndex(6)
-        onNodeWithTag("game-wildlife-survey").performClick()
-        onNodeWithTag("level-tutorial").performClick()
-
-        onNodeWithText("Hint").assertDoesNotExist()
-    }
 }

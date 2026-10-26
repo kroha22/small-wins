@@ -17,5 +17,4 @@ val portfolioGames = listOf(
     PortfolioGame("untangle", "Untangle", "Make a little space", "Move a point. Shift your perspective. Find the calm in the tangle.", "Spatial · Perspective", NativeStatus.PLAYABLE),
     PortfolioGame("waypoints", "Waypoints", "Enjoy the little detours", "A rabbit, a few carrots, and a path to find.", "Planning · Discovery", NativeStatus.PLAYABLE),
     PortfolioGame("shikaku", "Shikaku", "Make room for every clue", "Draw tidy rectangles and give each clue exactly the space it needs.", "Spatial · Packing", NativeStatus.PLAYABLE),
-    PortfolioGame("wildlife-survey", "Habitat Search", "A pond or a burrow", "Look carefully, find what is hidden, and keep a little map of the search.", "Observation · Logic", NativeStatus.PLAYABLE),
 )

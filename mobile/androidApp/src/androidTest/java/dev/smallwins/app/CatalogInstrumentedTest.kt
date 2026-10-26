@@ -36,7 +36,7 @@ class CatalogInstrumentedTest {
     }
 
     @Test
-    fun catalogShowsAllSixGamesOnDevice() {
+    fun catalogShowsAllFiveGamesOnDevice() {
         composeRule.onNodeWithText("Small Wins").assertIsDisplayed()
 
         listOf(
@@ -45,7 +45,6 @@ class CatalogInstrumentedTest {
             "untangle",
             "waypoints",
             "shikaku",
-            "wildlife-survey",
         ).forEachIndexed { index, gameId ->
             composeRule.onNodeWithTag("game-catalog").performScrollToIndex(index + 1)
             composeRule.onNodeWithTag("game-$gameId").assertIsDisplayed()
@@ -144,7 +143,6 @@ class CatalogInstrumentedTest {
             Triple("untangle", 3, "Untangle"),
             Triple("waypoints", 4, "Waypoints"),
             Triple("shikaku", 5, "Shikaku"),
-            Triple("wildlife-survey", 6, "Habitat Search"),
         ).forEach { (gameId, catalogIndex, title) ->
             composeRule.onNodeWithTag("game-catalog").performScrollToIndex(catalogIndex)
             composeRule.onNodeWithTag("game-$gameId").performClick()

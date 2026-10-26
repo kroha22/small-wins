@@ -52,7 +52,6 @@ import dev.smallwins.shared.PurrdokuLevel
 import dev.smallwins.shared.ShikakuLevel
 import dev.smallwins.shared.UntangleLevel
 import dev.smallwins.shared.WaypointsLevel
-import dev.smallwins.shared.HabitatLevel
 import dev.smallwins.shared.PipesEngine
 import dev.smallwins.shared.PipesLevel
 import dev.smallwins.shared.PipesState
@@ -62,7 +61,6 @@ import dev.smallwins.shared.purrdokuLevels
 import dev.smallwins.shared.shikakuLevels
 import dev.smallwins.shared.untangleLevels
 import dev.smallwins.shared.waypointsLevels
-import dev.smallwins.shared.habitatLevels
 
 private sealed interface Screen {
     data object Catalog : Screen
@@ -73,7 +71,6 @@ private sealed interface Screen {
     data class Untangle(val level: UntangleLevel, val seed: String? = null) : Screen
     data class Waypoints(val level: WaypointsLevel, val seed: String? = null) : Screen
     data class Shikaku(val level: ShikakuLevel, val seed: String? = null) : Screen
-    data class Habitat(val level: HabitatLevel, val seed: String? = null) : Screen
 }
 
 @Composable
@@ -158,16 +155,6 @@ fun SmallWinsRoot() {
                         onNext = { screen = Screen.Shikaku(shikakuLevels[shikakuLevels.indexOf(current.level) + 1]) },
                     )
                 }
-                is Screen.Habitat -> key("habitat/${current.level.id}") {
-                    HabitatGame(
-                        level = current.level,
-                        generatedSeed = current.seed,
-                        portfolio = portfolio,
-                        onBack = { screen = Screen.Levels("wildlife-survey") },
-                        showNext = current.level in habitatLevels && current.level != habitatLevels.last(),
-                        onNext = { screen = Screen.Habitat(habitatLevels[habitatLevels.indexOf(current.level) + 1]) },
-                    )
-                }
             }
         }
     }
@@ -181,7 +168,6 @@ private fun parentScreen(screen: Screen): Screen = when (screen) {
     is Screen.Untangle -> Screen.Levels("untangle")
     is Screen.Waypoints -> Screen.Levels("waypoints")
     is Screen.Shikaku -> Screen.Levels("shikaku")
-    is Screen.Habitat -> Screen.Levels("wildlife-survey")
 }
 
 private data class LevelItem(val id: String, val title: String, val difficulty: String)
@@ -193,7 +179,6 @@ private fun levelItems(gameId: String): List<LevelItem> {
         "untangle" -> untangleLevels.map { it.id to it.title }
         "waypoints" -> waypointsLevels.map { it.id to it.title }
         "shikaku" -> shikakuLevels.map { it.id to it.title }
-        "wildlife-survey" -> habitatLevels.map { it.id to it.title }
         else -> emptyList()
     }
     return levels.mapIndexed { index, (id, title) ->
@@ -207,7 +192,6 @@ private fun screenFor(gameId: String, levelId: String): Screen = when (gameId) {
     "untangle" -> Screen.Untangle(untangleLevels.first { it.id == levelId })
     "waypoints" -> Screen.Waypoints(waypointsLevels.first { it.id == levelId })
     "shikaku" -> Screen.Shikaku(shikakuLevels.first { it.id == levelId })
-    "wildlife-survey" -> Screen.Habitat(habitatLevels.first { it.id == levelId })
     else -> Screen.Catalog
 }
 
@@ -217,7 +201,6 @@ private fun generatedScreen(gameId: String, seed: String): Screen = when (gameId
     "untangle" -> Screen.Untangle(LevelGenerator.untangle(seed), seed)
     "waypoints" -> Screen.Waypoints(LevelGenerator.waypoints(seed), seed)
     "shikaku" -> Screen.Shikaku(LevelGenerator.shikaku(seed), seed)
-    "wildlife-survey" -> Screen.Habitat(LevelGenerator.habitat(seed), seed)
     else -> Screen.Catalog
 }
 
@@ -233,7 +216,6 @@ private fun screenForAttempt(attempt: SavedAttempt): Screen? {
         is Screen.Untangle -> screen.level.id
         is Screen.Waypoints -> screen.level.id
         is Screen.Shikaku -> screen.level.id
-        is Screen.Habitat -> screen.level.id
         else -> return null
     }
     return screen.takeIf { restoredId == attempt.levelId }

@@ -5,7 +5,17 @@ import tailwindcss from '@tailwindcss/vite';
 
 export default defineConfig({
   base: process.env.GITHUB_ACTIONS ? '/small-wins/' : '/',
-  plugins: [react(), babel({ presets: [reactCompilerPreset()] }), tailwindcss()],
+  plugins: [
+    react(),
+    babel({
+      presets: [reactCompilerPreset()],
+      exclude: [
+        /[\\/]node_modules[\\/]|\0rolldown\/runtime\.js/,
+        /[\\/]src[\\/]generated[\\/]puzzle-core[\\/]/,
+      ],
+    }),
+    tailwindcss(),
+  ],
   server: {
     watch: { ignored: ['**/storybook-static/**', '**/playwright-report/**', '**/test-results/**'] },
   },
