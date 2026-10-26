@@ -60,10 +60,10 @@ val mechanicCatalog: List<MechanicCatalogEntry> =
     listOf(
         entry("network", listOf("pipes"), MechanicFamily.NETWORK, LibraryStage.PILOT, solved + ActivityCapability.HINTS),
         entry("purrdoku", listOf("cats"), MechanicFamily.DEDUCTION, LibraryStage.PILOT, solved + ActivityCapability.HINTS),
-        research("untangle", family = MechanicFamily.SPATIAL),
+        entry("untangle", family = MechanicFamily.SPATIAL, stage = LibraryStage.PILOT, capabilities = generated + ActivityCapability.SOLUTION_WITNESS),
         entry("route", listOf("waypoints"), MechanicFamily.ROUTE, LibraryStage.PILOT, solved + ActivityCapability.HINTS),
         entry("shikaku", family = MechanicFamily.PACKING, stage = LibraryStage.PILOT, capabilities = solved + ActivityCapability.HINTS),
-        research("habitat-search", listOf("wildlife-survey"), MechanicFamily.OBSERVATION),
+        entry("habitat-search", listOf("wildlife-survey"), MechanicFamily.OBSERVATION, LibraryStage.PILOT, solved + ActivityCapability.HINTS),
         research("sokoban", family = MechanicFamily.MOVEMENT),
         research("packing", family = MechanicFamily.PACKING),
         research("color-neighbors", family = MechanicFamily.DEDUCTION),

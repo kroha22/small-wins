@@ -6,6 +6,11 @@ import dev.smallwins.puzzle.core.mechanics.network.NetworkLevel
 import dev.smallwins.puzzle.core.mechanics.network.NetworkPlugin
 import dev.smallwins.puzzle.core.mechanics.network.NetworkPayload
 import dev.smallwins.puzzle.core.mechanics.network.NetworkState
+import dev.smallwins.puzzle.core.mechanics.habitat.HabitatAction
+import dev.smallwins.puzzle.core.mechanics.habitat.HabitatGeneratorMetrics
+import dev.smallwins.puzzle.core.mechanics.habitat.HabitatPlugin
+import dev.smallwins.puzzle.core.mechanics.habitat.HabitatPayload
+import dev.smallwins.puzzle.core.mechanics.habitat.HabitatState
 import dev.smallwins.puzzle.core.mechanics.placement.PlacementAction
 import dev.smallwins.puzzle.core.mechanics.placement.PlacementGeneratorMetrics
 import dev.smallwins.puzzle.core.mechanics.placement.PlacementLevel
@@ -23,6 +28,11 @@ import dev.smallwins.puzzle.core.mechanics.shikaku.ShikakuLevel
 import dev.smallwins.puzzle.core.mechanics.shikaku.ShikakuPlugin
 import dev.smallwins.puzzle.core.mechanics.shikaku.ShikakuPayload
 import dev.smallwins.puzzle.core.mechanics.shikaku.ShikakuState
+import dev.smallwins.puzzle.core.mechanics.untangle.UntangleAction
+import dev.smallwins.puzzle.core.mechanics.untangle.UntangleGeneratorMetrics
+import dev.smallwins.puzzle.core.mechanics.untangle.UntanglePlugin
+import dev.smallwins.puzzle.core.mechanics.untangle.UntanglePayload
+import dev.smallwins.puzzle.core.mechanics.untangle.UntangleState
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonElement
@@ -62,7 +72,7 @@ class ConformanceFixtureTest {
             var state = adapter.initialState(fixture.level)
             fixture.actions.zip(fixture.expectedStates).forEach { (action, expected) ->
                 state = adapter.transition(fixture.level, state, action)
-                assertEquals(expected, state, "${fixture.mechanicId} transition")
+                assertJsonEquivalent(expected, state, "${fixture.mechanicId} transition")
             }
             assertEquals(fixture.solved, adapter.solved(fixture.level, state))
             assertJsonEquivalent(fixture.expectedGeneration, adapter.generate(fixture.generationRequest), "${fixture.mechanicId} generation")
@@ -82,6 +92,16 @@ private interface FixtureAdapter {
 
 private fun fixtureAdapter(mechanicId: String): FixtureAdapter =
     when (mechanicId) {
+        "habitat-search" -> {
+            val level = PuzzleLevel.serializer(HabitatPayload.serializer())
+            typedFixtureAdapter(
+                level,
+                HabitatState.serializer(),
+                HabitatAction.serializer(),
+                GenerationResult.serializer(level, HabitatState.serializer(), HabitatGeneratorMetrics.serializer()),
+                HabitatPlugin,
+            )
+        }
         "network" -> {
             val level = PuzzleLevel.serializer(NetworkPayload.serializer())
             typedFixtureAdapter(
@@ -120,6 +140,16 @@ private fun fixtureAdapter(mechanicId: String): FixtureAdapter =
                 ShikakuAction.serializer(),
                 GenerationResult.serializer(level, ShikakuState.serializer(), ShikakuGeneratorMetrics.serializer()),
                 ShikakuPlugin,
+            )
+        }
+        "untangle" -> {
+            val level = PuzzleLevel.serializer(UntanglePayload.serializer())
+            typedFixtureAdapter(
+                level,
+                UntangleState.serializer(),
+                UntangleAction.serializer(),
+                GenerationResult.serializer(level, UntangleState.serializer(), UntangleGeneratorMetrics.serializer()),
+                UntanglePlugin,
             )
         }
         else -> error("No fixture adapter for $mechanicId")

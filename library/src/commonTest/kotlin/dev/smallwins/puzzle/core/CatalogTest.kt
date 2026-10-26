@@ -15,12 +15,13 @@ class CatalogTest {
     fun compatibilityAliasesResolveWithoutIncludingProductActivities() {
         assertEquals("network", canonicalMechanicId("pipes"))
         assertEquals("route", canonicalMechanicId("waypoints"))
+        assertEquals("habitat-search", canonicalMechanicId("wildlife-survey"))
         assertNull(canonicalMechanicId("layer-restore"))
     }
 
     @Test
     fun onlyExecutableMechanicsAdvertisePilotCapabilities() {
-        val executable = setOf("network", "purrdoku", "route", "shikaku")
+        val executable = setOf("habitat-search", "network", "purrdoku", "route", "shikaku", "untangle")
         mechanicCatalog.forEach { entry ->
             if (entry.mechanicId in executable) {
                 assertEquals(LibraryStage.PILOT, entry.stage)
