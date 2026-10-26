@@ -3,6 +3,13 @@ package dev.smallwins.puzzle.core
 import dev.smallwins.puzzle.core.mechanics.network.NETWORK_GENERATOR_VERSION
 import dev.smallwins.puzzle.core.mechanics.network.NetworkPlugin
 import dev.smallwins.puzzle.core.mechanics.network.NetworkState
+import dev.smallwins.puzzle.core.mechanics.placement.PlacementClue
+import dev.smallwins.puzzle.core.mechanics.placement.PlacementEntity
+import dev.smallwins.puzzle.core.mechanics.placement.PlacementFeature
+import dev.smallwins.puzzle.core.mechanics.placement.PlacementPayload
+import dev.smallwins.puzzle.core.mechanics.placement.PlacementPlugin
+import dev.smallwins.puzzle.core.mechanics.placement.PlacementState
+import dev.smallwins.puzzle.core.mechanics.placement.PlacementZone
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
@@ -79,6 +86,82 @@ class SessionCodecTest {
         assertFalse(rejected.restored)
         assertEquals(SessionRestoreReason.INVALID_STATE, rejected.reason)
         assertEquals(NetworkPlugin.initialState(level), rejected.session.state)
+    }
+
+    @Test
+    fun everyVersionBoundaryRejectsAndReturnsASafeFreshSession() {
+        val saved = SessionCodec.fresh(level.identity, generated.solutionWitness, "old-attempt")
+        val raw = SessionCodec.encode(saved, NetworkState.serializer())
+        val incompatibleIdentities =
+            listOf(
+                level.identity.copy(schemaVersion = level.identity.schemaVersion + 1),
+                level.identity.copy(rulesVersion = level.identity.rulesVersion + 1),
+                level.identity.copy(contentVersion = level.identity.contentVersion + 1),
+                level.identity.copy(generatorVersion = (level.identity.generatorVersion ?: 0) + 1),
+            )
+        incompatibleIdentities.forEach { identity ->
+            val result =
+                SessionCodec.restore(
+                    expectedIdentity = identity,
+                    initialState = NetworkPlugin.initialState(level),
+                    raw = raw,
+                    fallbackAttemptId = "fresh-attempt",
+                    stateSerializer = NetworkState.serializer(),
+                ) { NetworkPlugin.validateState(level, it) }
+            assertFalse(result.restored)
+            assertEquals(SessionRestoreReason.INCOMPATIBLE_LEVEL, result.reason)
+            assertEquals("fresh-attempt", result.session.attemptId)
+            assertEquals(NetworkPlugin.initialState(level), result.session.state)
+        }
+
+        val unsupportedEnvelope = raw.replaceFirst("\"schemaVersion\":1", "\"schemaVersion\":2")
+        val result = restore(unsupportedEnvelope)
+        assertFalse(result.restored)
+        assertEquals(SessionRestoreReason.UNSUPPORTED_SCHEMA, result.reason)
+        assertEquals("fresh", result.session.attemptId)
+    }
+
+    @Test
+    fun placementAliasSessionRestoresButAnotherRulesVersionDoesNot() {
+        val placementLevel =
+            PuzzleLevel(
+                PuzzleIdentity("purrdoku", "purrdoku", "tests", "portable-placement", 1, 1, 1),
+                Difficulty(DifficultyBand.EASY, 0.25),
+                PlacementPayload(
+                    2,
+                    listOf(PlacementEntity("a"), PlacementEntity("b")),
+                    listOf(PlacementZone("top", listOf(0, 1)), PlacementZone("bottom", listOf(2, 3))),
+                    listOf(PlacementFeature("lamp", 1), PlacementFeature("bowl", 2)),
+                    listOf(PlacementClue("inColumn", "a", value = 0)),
+                ),
+            )
+        val saved =
+            SessionCodec.fresh(
+                placementLevel.identity.copy(mechanicId = "cats"),
+                PlacementState(mapOf("a" to 0, "b" to 3)),
+                "placement-attempt",
+            )
+        val raw = SessionCodec.encode(saved, PlacementState.serializer())
+        val restored =
+            SessionCodec.restore(
+                expectedIdentity = placementLevel.identity,
+                initialState = PlacementPlugin.initialState(placementLevel),
+                raw = raw,
+                fallbackAttemptId = "fresh",
+                stateSerializer = PlacementState.serializer(),
+            ) { PlacementPlugin.validateState(placementLevel, it) }
+        assertTrue(restored.restored)
+
+        val incompatible =
+            SessionCodec.restore(
+                expectedIdentity = placementLevel.identity.copy(rulesVersion = 2),
+                initialState = PlacementPlugin.initialState(placementLevel),
+                raw = raw,
+                fallbackAttemptId = "fresh",
+                stateSerializer = PlacementState.serializer(),
+            ) { PlacementPlugin.validateState(placementLevel, it) }
+        assertFalse(incompatible.restored)
+        assertEquals(SessionRestoreReason.INCOMPATIBLE_LEVEL, incompatible.reason)
     }
 
     private fun restore(raw: String) =

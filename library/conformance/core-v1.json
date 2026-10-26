@@ -1,0 +1,64 @@
+{
+  "cases": [
+    {
+      "mechanicId": "network",
+      "level": {
+        "identity": { "mechanicId": "network", "productGameId": "pipes", "levelPackId": "conformance", "levelId": "network-trace", "schemaVersion": 1, "rulesVersion": 1, "contentVersion": 1 },
+        "difficulty": { "band": "easy", "normalized": 0.25, "parameters": {} },
+        "payload": { "rows": 2, "cols": 2, "sourceCell": 0, "ports": [[0, 1], [0, 1], [0, 1], [0, 1]], "initialRotations": [0, 2, 0, 3] }
+      },
+      "invalidLevel": {
+        "identity": { "mechanicId": "network", "productGameId": "pipes", "levelPackId": "conformance", "levelId": "network-invalid", "schemaVersion": 1, "rulesVersion": 1, "contentVersion": 1 },
+        "difficulty": { "band": "easy", "normalized": 0.25, "parameters": {} },
+        "payload": { "rows": 2, "cols": 2, "sourceCell": 9, "ports": [[0]], "initialRotations": [0] }
+      },
+      "actions": [{ "type": "rotate", "cell": 0, "quarterTurns": 1 }],
+      "expectedStates": [{ "rotations": [1, 2, 0, 3] }],
+      "solved": true,
+      "generationRequest": { "seed": "fixture-network", "generatorVersion": 1, "difficulty": { "band": "easy", "normalized": 0.25, "parameters": {} } },
+      "expectedGeneration": { "level": { "identity": { "mechanicId": "network", "productGameId": "network", "levelPackId": "generated", "levelId": "generated-e056c1f2", "schemaVersion": 1, "rulesVersion": 1, "contentVersion": 1, "generatorVersion": 1, "seed": "fixture-network" }, "difficulty": { "band": "easy", "normalized": 0.25, "parameters": {} }, "payload": { "rows": 3, "cols": 3, "sourceCell": 0, "ports": [[2], [1], [2, 3], [0, 1], [3, 1], [3, 0, 2], [1], [1, 3], [0, 3]], "initialRotations": [1, 3, 0, 0, 0, 1, 1, 0, 3] } }, "solutionWitness": { "rotations": [0, 0, 0, 0, 0, 0, 0, 0, 0] }, "metrics": { "rows": 3, "cols": 3, "boardCells": 9, "deadEnds": 3, "branches": 1 }, "warnings": [] }
+    },
+    {
+      "mechanicId": "purrdoku",
+      "level": {
+        "identity": { "mechanicId": "purrdoku", "productGameId": "purrdoku", "levelPackId": "conformance", "levelId": "placement-trace", "schemaVersion": 1, "rulesVersion": 1, "contentVersion": 1 },
+        "difficulty": { "band": "easy", "normalized": 0.25, "parameters": {} },
+        "payload": {
+          "size": 3,
+          "entities": [{ "id": "ginger" }, { "id": "black" }, { "id": "white" }],
+          "zones": [{ "id": "top", "cells": [0, 1, 2] }, { "id": "middle", "cells": [3, 4, 5] }, { "id": "bottom", "cells": [6, 7, 8] }],
+          "features": [{ "id": "lamp", "cell": 1 }, { "id": "bowl", "cell": 3 }, { "id": "bed", "cell": 7 }],
+          "clues": [{ "type": "inColumn", "entity": "ginger", "value": 0 }, { "type": "inColumn", "entity": "black", "value": 1 }, { "type": "inColumn", "entity": "white", "value": 2 }]
+        }
+      },
+      "invalidLevel": {
+        "identity": { "mechanicId": "purrdoku", "productGameId": "purrdoku", "levelPackId": "conformance", "levelId": "placement-invalid", "schemaVersion": 1, "rulesVersion": 1, "contentVersion": 1 },
+        "difficulty": { "band": "easy", "normalized": 0.25, "parameters": {} },
+        "payload": { "size": 3, "entities": [], "zones": [], "features": [], "clues": [] }
+      },
+      "actions": [{ "type": "place", "entity": "ginger", "cell": 0 }, { "type": "place", "entity": "black", "cell": 4 }, { "type": "place", "entity": "white", "cell": 8 }],
+      "expectedStates": [{ "placements": { "ginger": 0, "black": null, "white": null } }, { "placements": { "ginger": 0, "black": 4, "white": null } }, { "placements": { "ginger": 0, "black": 4, "white": 8 } }],
+      "solved": true,
+      "generationRequest": { "seed": "fixture-placement", "generatorVersion": 1, "difficulty": { "band": "easy", "normalized": 0.25, "parameters": {} } },
+      "expectedGeneration": { "level": { "identity": { "mechanicId": "purrdoku", "productGameId": "purrdoku", "levelPackId": "generated", "levelId": "generated-c33bc922", "schemaVersion": 1, "rulesVersion": 1, "contentVersion": 1, "generatorVersion": 1, "seed": "fixture-placement" }, "difficulty": { "band": "easy", "normalized": 0.25, "parameters": {} }, "payload": { "size": 3, "entities": [{ "id": "entity-1" }, { "id": "entity-2" }, { "id": "entity-3" }], "zones": [{ "id": "zone-1", "cells": [0, 1, 2] }, { "id": "zone-2", "cells": [3, 4, 5] }, { "id": "zone-3", "cells": [6, 7, 8] }], "features": [{ "id": "feature-1", "cell": 0 }, { "id": "feature-2", "cell": 5 }, { "id": "feature-3", "cell": 6 }], "clues": [{ "type": "inZone", "entity": "entity-2", "zone": "zone-2" }, { "type": "rightOf", "entity": "entity-1", "other": "entity-2" }, { "type": "rightOf", "entity": "entity-1", "other": "entity-3" }, { "type": "inZone", "entity": "entity-3", "zone": "zone-3" }] } }, "solutionWitness": { "placements": { "entity-1": 2, "entity-2": 3, "entity-3": 7 } }, "metrics": { "size": 3, "clueCount": 4, "solverNodes": 61 }, "warnings": [] }
+    },
+    {
+      "mechanicId": "shikaku",
+      "level": {
+        "identity": { "mechanicId": "shikaku", "productGameId": "shikaku", "levelPackId": "conformance", "levelId": "shikaku-trace", "schemaVersion": 1, "rulesVersion": 1, "contentVersion": 1 },
+        "difficulty": { "band": "easy", "normalized": 0.25, "parameters": {} },
+        "payload": { "rows": 2, "cols": 3, "clues": [{ "cell": 0, "area": 2 }, { "cell": 2, "area": 2 }, { "cell": 4, "area": 2 }], "initialRegions": [-1, -1, -1, -1, -1, -1] }
+      },
+      "invalidLevel": {
+        "identity": { "mechanicId": "shikaku", "productGameId": "shikaku", "levelPackId": "conformance", "levelId": "shikaku-invalid", "schemaVersion": 1, "rulesVersion": 1, "contentVersion": 1 },
+        "difficulty": { "band": "easy", "normalized": 0.25, "parameters": {} },
+        "payload": { "rows": 2, "cols": 3, "clues": [{ "cell": 9, "area": 9 }], "initialRegions": [-1] }
+      },
+      "actions": [{ "type": "place", "clue": 0, "top": 0, "left": 0, "bottom": 0, "right": 1 }, { "type": "place", "clue": 1, "top": 0, "left": 2, "bottom": 1, "right": 2 }, { "type": "place", "clue": 2, "top": 1, "left": 0, "bottom": 1, "right": 1 }],
+      "expectedStates": [{ "regions": [0, 0, -1, -1, -1, -1] }, { "regions": [0, 0, 1, -1, -1, 1] }, { "regions": [0, 0, 1, 2, 2, 1] }],
+      "solved": true,
+      "generationRequest": { "seed": "fixture-shikaku", "generatorVersion": 1, "difficulty": { "band": "easy", "normalized": 0.25, "parameters": {} } },
+      "expectedGeneration": { "level": { "identity": { "mechanicId": "shikaku", "productGameId": "shikaku", "levelPackId": "generated", "levelId": "generated-79540806", "schemaVersion": 1, "rulesVersion": 1, "contentVersion": 1, "generatorVersion": 1, "seed": "fixture-shikaku" }, "difficulty": { "band": "easy", "normalized": 0.25, "parameters": {} }, "payload": { "rows": 3, "cols": 3, "clues": [{ "cell": 0, "area": 3 }, { "cell": 5, "area": 3 }, { "cell": 8, "area": 3 }], "initialRegions": [-1, -1, -1, -1, -1, -1, -1, -1, -1] } }, "solutionWitness": { "regions": [0, 0, 0, 1, 1, 1, 2, 2, 2] }, "metrics": { "rows": 3, "cols": 3, "regions": 3, "attempts": 2 }, "warnings": [] }
+    }
+  ]
+}

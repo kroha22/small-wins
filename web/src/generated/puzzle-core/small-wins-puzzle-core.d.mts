@@ -10,6 +10,7 @@ export declare function evaluate(mechanicId: string, levelJson: string, stateJso
 export declare function inspect(mechanicId: string, levelJson: string, stateJson: string): string;
 export declare function solve(mechanicId: string, levelJson: string): string;
 export declare function solveWithBudget(mechanicId: string, levelJson: string, budget: number): string;
+export declare function solveDetails(mechanicId: string, levelJson: string, stateJson: Nullable<string>, limit: number, budget: number): string;
 export declare function hint(mechanicId: string, levelJson: string, stateJson: string, used: number): string;
 export declare function freshSession(mechanicId: string, levelJson: string, attemptId: string): string;
 export declare function encodeSession(mechanicId: string, levelJson: string, attemptId: string, stateJson: string, historyJson: string, moveCount: number, hintsUsed: number, revision: number): string;

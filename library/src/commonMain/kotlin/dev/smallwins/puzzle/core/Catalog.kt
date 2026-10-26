@@ -59,24 +59,24 @@ private val solved = generated + listOf(ActivityCapability.SOLVER, ActivityCapab
 val mechanicCatalog: List<MechanicCatalogEntry> =
     listOf(
         entry("network", listOf("pipes"), MechanicFamily.NETWORK, LibraryStage.PILOT, solved + ActivityCapability.HINTS),
-        entry("purrdoku", listOf("cats"), MechanicFamily.DEDUCTION, capabilities = solved + ActivityCapability.HINTS),
-        entry("untangle", family = MechanicFamily.SPATIAL, capabilities = generated),
-        entry("route", listOf("waypoints"), MechanicFamily.ROUTE, capabilities = solved + ActivityCapability.HINTS),
-        entry("shikaku", family = MechanicFamily.PACKING, capabilities = solved + ActivityCapability.HINTS),
-        entry("habitat-search", listOf("wildlife-survey"), MechanicFamily.OBSERVATION, capabilities = generated),
-        entry("sokoban", family = MechanicFamily.MOVEMENT, capabilities = solved),
-        entry("packing", family = MechanicFamily.PACKING, capabilities = generated),
-        entry("color-neighbors", family = MechanicFamily.DEDUCTION, capabilities = generated),
-        entry("spatial-deduction", listOf("murr-doku"), MechanicFamily.DEDUCTION, capabilities = generated),
-        entry("grid-move", family = MechanicFamily.MOVEMENT, capabilities = listOf(ActivityCapability.DIFFICULTY, ActivityCapability.SERIALIZABLE_STATE)),
-        entry("one-stroke", family = MechanicFamily.ROUTE, capabilities = generated),
-        entry("nonogram", family = MechanicFamily.DEDUCTION, capabilities = generated),
-        entry("codebreaker", family = MechanicFamily.DEDUCTION, capabilities = generated),
-        entry("connect-pairs", family = MechanicFamily.ROUTE, capabilities = listOf(ActivityCapability.DIFFICULTY, ActivityCapability.SERIALIZABLE_STATE)),
-        entry("maze", family = MechanicFamily.ROUTE, capabilities = generated),
-        entry("hashi", family = MechanicFamily.NETWORK, stage = LibraryStage.RESEARCH, capabilities = generated),
-        entry("slitherlink", family = MechanicFamily.ROUTE, stage = LibraryStage.RESEARCH, capabilities = generated),
-        entry("masyu", family = MechanicFamily.ROUTE, stage = LibraryStage.RESEARCH, capabilities = generated),
+        entry("purrdoku", listOf("cats"), MechanicFamily.DEDUCTION, LibraryStage.PILOT, solved + ActivityCapability.HINTS),
+        research("untangle", family = MechanicFamily.SPATIAL),
+        research("route", listOf("waypoints"), MechanicFamily.ROUTE),
+        entry("shikaku", family = MechanicFamily.PACKING, stage = LibraryStage.PILOT, capabilities = solved + ActivityCapability.HINTS),
+        research("habitat-search", listOf("wildlife-survey"), MechanicFamily.OBSERVATION),
+        research("sokoban", family = MechanicFamily.MOVEMENT),
+        research("packing", family = MechanicFamily.PACKING),
+        research("color-neighbors", family = MechanicFamily.DEDUCTION),
+        research("spatial-deduction", listOf("murr-doku"), MechanicFamily.DEDUCTION),
+        research("grid-move", family = MechanicFamily.MOVEMENT),
+        research("one-stroke", family = MechanicFamily.ROUTE),
+        research("nonogram", family = MechanicFamily.DEDUCTION),
+        research("codebreaker", family = MechanicFamily.DEDUCTION),
+        research("connect-pairs", family = MechanicFamily.ROUTE),
+        research("maze", family = MechanicFamily.ROUTE),
+        research("hashi", family = MechanicFamily.NETWORK),
+        research("slitherlink", family = MechanicFamily.ROUTE),
+        research("masyu", family = MechanicFamily.ROUTE),
     )
 
 fun canonicalMechanicId(id: String): String? =
@@ -89,3 +89,9 @@ private fun entry(
     stage: LibraryStage = LibraryStage.CANDIDATE,
     capabilities: List<ActivityCapability>,
 ) = MechanicCatalogEntry(mechanicId, aliases, family, stage, capabilities)
+
+private fun research(
+    mechanicId: String,
+    aliases: List<String> = emptyList(),
+    family: MechanicFamily,
+) = entry(mechanicId, aliases, family, LibraryStage.RESEARCH, emptyList())

@@ -1,5 +1,6 @@
 import { z } from 'zod';
-import { accept, reject, cellName, type Engine } from '../../shared/lib/engine';
+import { cellName, type Engine, type Level, type PortableSession } from '../../shared/lib/engine';
+import { puzzleCore } from '../../shared/lib/puzzle-core';
 export const catIds = ['ginger', 'black', 'white', 'gray'] as const;
 export type CatId = (typeof catIds)[number];
 export const cats = catIds.map((id, i) => ({
@@ -67,35 +68,62 @@ export type Payload = z.infer<typeof payloadSchema>;
 export type State = { placements: Partial<Record<CatId, number | null>> };
 export type Action =
   { type: 'placeCat'; cat: CatId; cell: number } | { type: 'removeCat'; cat: CatId };
+
+type CorePayload = {
+  size: number;
+  entities: { id: string }[];
+  zones: { id: string; cells: number[] }[];
+  features: { id: string; cell: number }[];
+  clues: { type: string; entity: string; value?: number; other?: string; zone?: string; feature?: string }[];
+};
+type CoreLevel = {
+  identity: {
+    mechanicId: 'purrdoku';
+    productGameId: 'purrdoku';
+    levelPackId: string;
+    levelId: string;
+    schemaVersion: 1;
+    rulesVersion: 1;
+    contentVersion: number;
+  };
+  difficulty: { band: 'tutorial' | 'easy' | 'medium' | 'hard'; normalized: number; parameters: Record<string, never> };
+  payload: CorePayload;
+};
+type CoreTransition = { accepted: boolean; changed: boolean; state: State; reason?: string };
+type CoreInspection = { clueStatuses: ('unresolved' | 'satisfied' | 'violated')[]; conflicts: CatId[] };
+type CoreHint = {
+  kind: 'zone' | 'column' | 'landmark' | 'relative-cell' | 'exact-cell';
+  data: { entity: CatId; cell: number; row: number; column: number; zone?: string; feature?: string };
+};
+type CoreSolveResult = { solutions: State[]; nodes: number; exceeded: boolean };
+type CoreRestoreResult = { restored: boolean; session: PortableSession<State>; reason?: string };
+
+const corePayload = (payload: Payload, clues = payload.clues): CorePayload => ({
+  size: payload.size,
+  entities: payload.cats.map(({ id }) => ({ id })),
+  zones: payload.zones.map(({ id, cells }) => ({ id, cells })),
+  features: payload.features.map(({ id, cell }) => ({ id, cell })),
+  clues: clues.map(({ cat, ...clue }) => ({ ...clue, entity: cat })),
+});
+const difficultyValue = (difficulty: Level<Payload>['difficulty']) =>
+  difficulty === 'tutorial' ? 0 : difficulty === 'easy' ? 0.25 : difficulty === 'hard' ? 0.75 : 0.5;
+const coreLevel = (
+  payload: Payload,
+  metadata: Pick<Level<Payload>, 'id' | 'difficulty' | 'contentVersion'> = {
+    id: 'legacy-adapter', difficulty: 'medium', contentVersion: 1,
+  },
+  clues = payload.clues,
+): CoreLevel => ({
+  identity: {
+    mechanicId: 'purrdoku', productGameId: 'purrdoku', levelPackId: 'web-authored',
+    levelId: metadata.id, schemaVersion: 1, rulesVersion: 1, contentVersion: metadata.contentVersion,
+  },
+  difficulty: { band: metadata.difficulty, normalized: difficultyValue(metadata.difficulty), parameters: {} },
+  payload: corePayload(payload, clues),
+});
+
 export function clueStatus(p: Payload, s: State, q: Clue): 'unresolved' | 'satisfied' | 'violated' {
-  const a = s.placements[q.cat];
-  if (a == null) return 'unresolved';
-  const r = Math.floor(a / p.size),
-    c = a % p.size;
-  let ok: boolean;
-  if ('value' in q) ok = q.type === 'inRow' ? r === q.value : c === q.value;
-  else if ('other' in q) {
-    const b = s.placements[q.other];
-    if (b == null) return 'unresolved';
-    const br = Math.floor(b / p.size),
-      bc = b % p.size;
-    ok =
-      q.type === 'leftOf'
-        ? c < bc
-        : q.type === 'rightOf'
-          ? c > bc
-          : q.type === 'above'
-            ? r < br
-            : r > br;
-  } else if ('zone' in q) {
-    const inside = p.zones.find((z) => z.id === q.zone)!.cells.includes(a);
-    ok = q.type === 'inZone' ? inside : !inside;
-  } else {
-    const f = p.features.find((v) => v.id === q.feature)!.cell;
-    const adjacent = Math.abs(r - Math.floor(f / p.size)) + Math.abs(c - (f % p.size)) === 1;
-    ok = q.type === 'adjacentToFeature' ? adjacent : !adjacent;
-  }
-  return ok ? 'satisfied' : 'violated';
+  return puzzleCore.inspect<CoreInspection>('purrdoku', coreLevel(p, undefined, [q]), s).clueStatuses[0]!;
 }
 export function clueText(p: Payload, q: Clue) {
   const name = `The ${q.cat} cat`;
@@ -113,208 +141,131 @@ export function clueText(p: Payload, q: Clue) {
     return `${name} is ${q.type === 'inZone' ? 'inside' : 'outside'} the ${p.zones.find((v) => v.id === q.zone)!.label}.`;
   return `${name} is ${q.type === 'adjacentToFeature' ? 'next to' : 'not next to'} the ${p.features.find((v) => v.id === q.feature)!.label}.`;
 }
-function roomAt(p: Payload, cell: number) {
-  return p.zones.find((zone) => zone.cells.includes(cell))?.id;
-}
-function featureAt(p: Payload, cell: number) {
-  return p.features.find((feature) => feature.cell === cell);
-}
 export function placementConflicts(p: Payload, s: State) {
-  const groups = new Map<string, CatId[]>();
-  for (const cat of p.cats) {
-    const cell = s.placements[cat.id];
-    if (cell == null) continue;
-    const room = roomAt(p, cell);
-    const keys = [`row:${Math.floor(cell / p.size)}`, `column:${cell % p.size}`];
-    if (room) keys.push(`room:${room}`);
-    for (const key of keys) groups.set(key, [...(groups.get(key) ?? []), cat.id]);
-  }
-  return new Set([...groups.values()].filter((cats) => cats.length > 1).flat());
+  return new Set(puzzleCore.inspect<CoreInspection>('purrdoku', coreLevel(p), s).conflicts);
 }
-function structured(s: State, p: Payload) {
-  const cells = Object.values(s.placements).filter((cell): cell is number => cell != null);
-  const rows = cells.map((cell) => Math.floor(cell / p.size));
-  const columns = cells.map((cell) => cell % p.size);
-  const rooms = cells.map((cell) => roomAt(p, cell)).filter((room): room is string => room != null);
-  return new Set(rows).size === rows.length && new Set(columns).size === columns.length && new Set(rooms).size === rooms.length;
-}
-const stateSchema = z.object({ placements: z.record(z.string(), z.number().int().nullable()) });
+
+const reasonText: Record<string, string> = {
+  'unknown-entity': 'Choose a cat from the tray.',
+  'invalid-cell': 'Choose a cell on the board.',
+  'feature-occupied': 'That spot belongs to an object. Choose an empty spot.',
+};
 export const engine: Engine<Payload, State, Action> = {
-  initial: (p) => ({ placements: Object.fromEntries(p.cats.map((c) => [c.id, null])) }),
+  initial: (p) => puzzleCore.initialState<State>('purrdoku', coreLevel(p)),
   validState: (p, s): s is State => {
-    const v = stateSchema.safeParse(s);
-    if (!v.success) return false;
-    const entries = Object.entries(v.data.placements);
-    const cells = entries.flatMap(([, n]) => (n == null ? [] : [n]));
-    return (
-      entries.length === p.cats.length &&
-      entries.every(([id]) => p.cats.some((c) => c.id === id)) &&
-      cells.every((n) => n >= 0 && n < p.size * p.size && !featureAt(p, n)) &&
-      new Set(cells).size === cells.length
-    );
+    try {
+      return puzzleCore.validateState<{ valid: boolean }>('purrdoku', coreLevel(p), s).valid;
+    } catch {
+      return false;
+    }
   },
   apply(p, s, a) {
-    if (!p.cats.some((c) => c.id === a.cat)) return reject(s, 'Choose a cat from the tray.');
-    if (a.type === 'removeCat') {
-      if (s.placements[a.cat] == null) return accept(s, false);
-      return accept({ placements: { ...s.placements, [a.cat]: null } });
-    }
-    if (
-      a.type !== 'placeCat' ||
-      !Number.isInteger(a.cell) ||
-      a.cell < 0 ||
-      a.cell >= p.size * p.size
-    )
-      return reject(s, 'Choose a cell on the board.');
-    if (s.placements[a.cat] === a.cell) return accept(s, false);
-    if (featureAt(p, a.cell)) return reject(s, 'That spot belongs to an object. Choose an empty spot.');
-    const occupant = Object.entries(s.placements).find(([cat, cell]) => cat !== a.cat && cell === a.cell)?.[0] as CatId | undefined;
-    if (!occupant) return accept({ placements: { ...s.placements, [a.cat]: a.cell } });
-    return accept({ placements: { ...s.placements, [a.cat]: a.cell, [occupant]: s.placements[a.cat] ?? null } });
+    const action = a.type === 'placeCat'
+      ? { type: 'place', entity: a.cat, cell: a.cell }
+      : { type: 'remove', entity: a.cat };
+    const result = puzzleCore.transition<CoreTransition>('purrdoku', coreLevel(p), s, action);
+    return { ...result, state: result.changed ? result.state : s, reason: result.reason ? reasonText[result.reason] ?? result.reason : undefined };
   },
-  solved: (p, s) =>
-    p.cats.every((c) => s.placements[c.id] != null) &&
-    structured(s, p) &&
-    p.clues.every((q) => clueStatus(p, s, q) === 'satisfied'),
+  solved: (p, s) => puzzleCore.evaluate<{ solved: boolean }>('purrdoku', coreLevel(p), s).solved,
   hint: (p, s, used) => {
     const reply = solverHint(p, s, used);
     return reply.status === 'ok' ? reply.text : null;
   },
+  persistence: {
+    restore: (level, raw, fallbackAttemptId) => {
+      if (raw == null) return null;
+      try {
+        const result = puzzleCore.restoreSession<CoreRestoreResult>(
+          'purrdoku', coreLevel(level.payload, level), raw, fallbackAttemptId,
+        );
+        if (!result.restored) return null;
+        const { attemptId, state, history, moveCount, hintsUsed, revision } = result.session;
+        return { attemptId, state, history, moveCount, hintsUsed, revision };
+      } catch {
+        return null;
+      }
+    },
+    encode: (level, session) => puzzleCore.encodeSession('purrdoku', coreLevel(level.payload, level), session),
+  },
 };
 export function solve(p: Payload, partial: State = engine.initial(p), limit = 2, budget = 50000) {
-  const solutions: State[] = [];
-  let nodes = 0,
-    exceeded = false;
-  if (!engine.validState(p, partial)) return { solutions, nodes, exceeded };
-  const visit = (s: State) => {
-    if (solutions.length >= limit || exceeded) return;
-    if (++nodes > budget) {
-      exceeded = true;
-      return;
-    }
-    if (p.clues.some((q) => clueStatus(p, s, q) === 'violated') || !structured(s, p)) return;
-    const cat = p.cats.find((c) => s.placements[c.id] == null);
-    if (!cat) {
-      solutions.push(s);
-      return;
-    }
-    for (let cell = 0; cell < p.size * p.size; cell++) {
-      if (Object.entries(s.placements).some(([id, placed]) => id !== cat.id && placed === cell)) continue;
-      const t = engine.apply(p, s, { type: 'placeCat', cat: cat.id, cell });
-      if (t.accepted && t.changed) visit(t.state);
-      if (solutions.length >= limit || exceeded) break;
-    }
-  };
-  visit(partial);
-  return { solutions, nodes, exceeded };
+  return puzzleCore.solveDetails<CoreSolveResult>('purrdoku', coreLevel(p), partial, limit, budget);
 }
 export function solverHint(p: Payload, s: State, used = 0) {
-  // Extra clues reveal facts about the puzzle, never validate a wrong hypothesis.
-  const result = solve(p);
-  if (result.exceeded) return { status: 'budget-exceeded' as const };
-  if (result.solutions.length !== 1) return { status: 'unavailable' as const };
-  const answer = result.solutions[0]!;
-  const remaining = p.cats.filter((c) => s.placements[c.id] !== answer.placements[c.id]);
-  if (!remaining.length) return { status: 'unavailable' as const };
-  const cat = remaining[used < 4 ? 0 : (used - 4) % remaining.length]!;
-  const cell = answer.placements[cat.id]!;
-  const room = p.zones.find((z) => z.cells.includes(cell));
-  const area = room ? `inside the ${room.label}` : `in row ${Math.floor(cell / p.size) + 1}`;
+  const solved = solve(p);
+  if (solved.exceeded) return { status: 'budget-exceeded' as const };
+  if (solved.solutions.length !== 1) return { status: 'unavailable' as const };
+  const hint = puzzleCore.hint<CoreHint | null>('purrdoku', coreLevel(p), s, used);
+  if (!hint) return { status: 'unavailable' as const };
+  const cat = p.cats.find((candidate) => candidate.id === hint.data.entity)!;
+  const room = p.zones.find((candidate) => candidate.id === hint.data.zone);
+  const feature = p.features.find((candidate) => candidate.id === hint.data.feature);
   const lead = `The ${cat.id} cat`;
-  if (used === 0)
+  if (hint.kind === 'zone')
+    return { status: 'ok' as const, text: `Extra clue 1: ${lead} belongs ${room ? `inside the ${room.label}` : `in row ${hint.data.row + 1}`}. Look for its spot there.` };
+  if (hint.kind === 'column')
+    return { status: 'ok' as const, text: `Extra clue 2: ${lead} belongs ${room ? `inside the ${room.label}` : `in row ${hint.data.row + 1}`}, in column ${hint.data.column + 1}.` };
+  if (hint.kind === 'landmark') {
+    if (!feature)
+      return { status: 'ok' as const, text: `Closer clue: use the nearest object as a landmark for the ${cat.id} cat.` };
+    const featureRow = Math.floor(feature.cell / p.size);
+    const featureColumn = feature.cell % p.size;
+    const relation = [
+      hint.data.row < featureRow ? 'above' : hint.data.row > featureRow ? 'below' : '',
+      hint.data.column < featureColumn
+        ? 'to the left of'
+        : hint.data.column > featureColumn
+          ? 'to the right of'
+          : '',
+    ]
+      .filter(Boolean)
+      .join(' and ');
     return {
       status: 'ok' as const,
-      text: `Extra clue 1: ${lead} belongs ${area}. Look for its spot there.`,
-    };
-  if (used === 1) {
-    const candidates = (room?.cells ?? []).filter(
-      (candidate) => candidate % p.size === cell % p.size && !featureAt(p, candidate),
-    );
-    const countText = candidates.length > 1
-      ? ` This still leaves ${candidates.length} possible squares; the next clues separate them.`
-      : ' This identifies the only available square in that room and column.';
-    return {
-      status: 'ok' as const,
-      text: `Extra clue 2: ${lead} belongs ${area}, in column ${(cell % p.size) + 1}.${countText}`,
-    };
-  }
-  const row = Math.floor(cell / p.size),
-    column = cell % p.size;
-  const areaCells = room?.cells ?? Array.from({ length: p.size * p.size }, (_, i) => i);
-  const rows = [...new Set(areaCells.map((c) => Math.floor(c / p.size)))].sort((a, b) => a - b);
-  const rowCells = areaCells.filter((c) => Math.floor(c / p.size) === row).sort((a, b) => a - b);
-  const rowIndex = rows.indexOf(row),
-    columnIndex = rowCells.indexOf(cell);
-  const rowWords =
-    rows.length === 1
-      ? 'only'
-      : rowIndex === 0
-        ? 'top'
-        : rowIndex === rows.length - 1
-          ? 'bottom'
-          : rows.length === 3
-            ? 'middle'
-            : rowIndex === 1
-              ? 'upper middle'
-              : 'lower middle';
-  const columnWords =
-    rowCells.length === 1
-      ? 'only'
-      : columnIndex === 0
-        ? 'leftmost'
-        : columnIndex === rowCells.length - 1
-          ? 'rightmost'
-          : rowCells.length === 3
-            ? 'middle'
-            : columnIndex === 1
-              ? 'left-hand middle'
-              : 'right-hand middle';
-  const areaName = room ? `the ${room.label}` : 'the board';
-  if (used === 2) {
-    // Relate the answer to a visible object, without revealing numeric coordinates.
-    const feature = [...p.features].sort((a, b) => {
-      const distance = (c: number) =>
-        Math.abs(row - Math.floor(c / p.size)) + Math.abs(column - (c % p.size));
-      return distance(a.cell) - distance(b.cell);
-    })[0];
-    const relation = feature
-      ? [
-          row < Math.floor(feature.cell / p.size)
-            ? 'above'
-            : row > Math.floor(feature.cell / p.size)
-              ? 'below'
-              : '',
-          column < feature.cell % p.size
-            ? 'to the left of'
-            : column > feature.cell % p.size
-              ? 'to the right of'
-              : '',
-        ]
-          .filter(Boolean)
-          .join(' and ')
-      : '';
-    return {
-      status: 'ok' as const,
-      text: feature
-        ? `Closer clue: ${lead} belongs ${relation ? `${relation} the ${feature.label}` : `on the square with the ${feature.label}`}. Use that object as your landmark.`
-        : `Closer clue: look in the ${rowWords} row of ${areaName} for the ${cat.id} cat.`,
+      text: `Closer clue: the ${cat.id} cat belongs ${relation ? `${relation} the ${feature.label}` : `on the square with the ${feature.label}`}. Use that object as your landmark.`,
     };
   }
-  if (used === 3)
+  if (hint.kind === 'relative-cell') {
+    const areaCells = room?.cells ?? Array.from({ length: p.size * p.size }, (_, index) => index);
+    const rows = [...new Set(areaCells.map((cell) => Math.floor(cell / p.size)))].sort((a, b) => a - b);
+    const rowCells = areaCells
+      .filter((cell) => Math.floor(cell / p.size) === hint.data.row)
+      .sort((a, b) => a - b);
+    const rowIndex = rows.indexOf(hint.data.row);
+    const columnIndex = rowCells.findIndex((cell) => cell % p.size === hint.data.column);
+    const rowWord =
+      rows.length === 1
+        ? 'only'
+        : rowIndex === 0
+          ? 'top'
+          : rowIndex === rows.length - 1
+            ? 'bottom'
+            : rows.length === 3
+              ? 'middle'
+              : rowIndex === 1
+                ? 'upper middle'
+                : 'lower middle';
+    const columnWord =
+      rowCells.length === 1
+        ? 'only'
+        : columnIndex === 0
+          ? 'leftmost'
+          : columnIndex === rowCells.length - 1
+            ? 'rightmost'
+            : rowCells.length === 3
+              ? 'middle'
+              : columnIndex === 1
+                ? 'left-hand middle'
+                : 'right-hand middle';
     return {
       status: 'ok' as const,
-      text: `One more clue: in ${areaName}, find its ${rowWords} row. Choose the ${columnWords} square in that row for the ${cat.id} cat.`,
+      text: `One more clue: in ${room ? `the ${room.label}` : 'the board'}, find its ${rowWord} row. Choose the ${columnWord} square in that row for the ${cat.id} cat.`,
     };
-  const blockers = p.cats.filter((c) => {
-    const other = s.placements[c.id];
-    return (
-      c.id !== cat.id &&
-      other != null &&
-      (Math.floor(other / p.size) === Math.floor(cell / p.size) || other % p.size === cell % p.size)
-    );
+  }
+  const blockers = p.cats.filter((candidate) => {
+    const other = s.placements[candidate.id];
+    return candidate.id !== cat.id && other != null &&
+      (Math.floor(other / p.size) === hint.data.row || other % p.size === hint.data.column);
   });
-  return {
-    status: 'ok' as const,
-    text: `Exact spot: place the ${cat.id} cat at ${cellName(cell, p.size)}.${blockers.length ? ` First remove ${blockers.map((c) => `the ${c.id} cat`).join(' and ')} to free its row and column.` : ''}`,
-  };
+  return { status: 'ok' as const, text: `Exact spot: place the ${cat.id} cat at ${cellName(hint.data.cell, p.size)}.${blockers.length ? ` First remove ${blockers.map((candidate) => `the ${candidate.id} cat`).join(' and ')} to free its row and column.` : ''}` };
 }

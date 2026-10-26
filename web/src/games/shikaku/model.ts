@@ -1,5 +1,6 @@
 import { z } from 'zod';
-import { accept, reject, type Engine } from '../../shared/lib/engine';
+import type { Engine, Level, PortableSession } from '../../shared/lib/engine';
+import { puzzleCore } from '../../shared/lib/puzzle-core';
 
 export const payloadSchema = z
   .object({
@@ -37,17 +38,74 @@ export const payloadSchema = z
 
 export type Payload = z.infer<typeof payloadSchema>;
 export type State = { regions: number[] };
-export type Action = {
-  type: 'place';
-  clue: number;
-  top: number;
-  left: number;
-  bottom: number;
-  right: number;
-};
+export type Action =
+  | {
+      type: 'place';
+      clue: number;
+      top: number;
+      left: number;
+      bottom: number;
+      right: number;
+    }
+  | { type: 'clear'; clue: number };
 const stateSchema = z.object({ regions: z.array(z.number().int()) });
 
-export function rectangleCells(p: Payload, action: Pick<Action, 'top' | 'left' | 'bottom' | 'right'>) {
+type CoreLevel = {
+  identity: {
+    mechanicId: 'shikaku';
+    productGameId: 'shikaku';
+    levelPackId: string;
+    levelId: string;
+    schemaVersion: 1;
+    rulesVersion: 1;
+    contentVersion: number;
+  };
+  difficulty: {
+    band: 'tutorial' | 'easy' | 'medium' | 'hard';
+    normalized: number;
+    parameters: Record<string, never>;
+  };
+  payload: Payload;
+};
+type CoreTransition = { accepted: boolean; changed: boolean; state: State; reason?: string };
+type CoreHint = {
+  kind: 'area' | 'rectangle';
+  data: { clue: number; area: number; top: number; left: number; bottom: number; right: number };
+};
+type CoreSolveResult = { solutions: State[]; nodes: number; exceeded: boolean };
+type CoreRestoreResult = { restored: boolean; session: PortableSession<State>; reason?: string };
+
+const difficultyValue = (difficulty: Level<Payload>['difficulty']) =>
+  difficulty === 'tutorial' ? 0 : difficulty === 'easy' ? 0.25 : difficulty === 'hard' ? 0.75 : 0.5;
+const coreLevel = (
+  payload: Payload,
+  metadata: Pick<Level<Payload>, 'id' | 'difficulty' | 'contentVersion'> = {
+    id: 'legacy-adapter',
+    difficulty: 'medium',
+    contentVersion: 1,
+  },
+): CoreLevel => ({
+  identity: {
+    mechanicId: 'shikaku',
+    productGameId: 'shikaku',
+    levelPackId: 'web-authored',
+    levelId: metadata.id,
+    schemaVersion: 1,
+    rulesVersion: 1,
+    contentVersion: metadata.contentVersion,
+  },
+  difficulty: {
+    band: metadata.difficulty,
+    normalized: difficultyValue(metadata.difficulty),
+    parameters: {},
+  },
+  payload,
+});
+
+export function rectangleCells(
+  p: Payload,
+  action: { top: number; left: number; bottom: number; right: number },
+) {
   const cells: number[] = [];
   for (let row = action.top; row <= action.bottom; row += 1) {
     for (let col = action.left; col <= action.right; col += 1) {
@@ -57,106 +115,65 @@ export function rectangleCells(p: Payload, action: Pick<Action, 'top' | 'left' |
   return cells;
 }
 
-function isRectangle(p: Payload, cells: number[]) {
-  if (cells.length === 0) return false;
-  const rows = cells.map((cell) => Math.floor(cell / p.cols));
-  const cols = cells.map((cell) => cell % p.cols);
-  const top = Math.min(...rows);
-  const bottom = Math.max(...rows);
-  const left = Math.min(...cols);
-  const right = Math.max(...cols);
-  return rectangleCells(p, { top, left, bottom, right }).length === cells.length;
-}
-
 export function regionCells(state: State, clue: number) {
   return state.regions.flatMap((value, cell) => (value === clue ? [cell] : []));
 }
 
 export function solutions(p: Payload, limit = 2): State[] {
-  const options = p.clues.map((clue) => {
-    const result: number[][] = [];
-    for (let top = 0; top < p.rows; top += 1)
-      for (let left = 0; left < p.cols; left += 1)
-        for (let bottom = top; bottom < p.rows; bottom += 1)
-          for (let right = left; right < p.cols; right += 1) {
-            const cells = rectangleCells(p, { top, left, bottom, right });
-            if (cells.length === clue.area && cells.includes(clue.cell)) result.push(cells);
-          }
-    return result;
-  });
-  const found: State[] = [];
-  const regions = Array<number>(p.rows * p.cols).fill(-1);
-  function search(clue: number) {
-    if (found.length >= limit) return;
-    if (clue === p.clues.length) {
-      found.push({ regions: [...regions] });
-      return;
-    }
-    for (const cells of options[clue]!) {
-      if (cells.some((cell) => regions[cell] !== -1)) continue;
-      cells.forEach((cell) => (regions[cell] = clue));
-      search(clue + 1);
-      cells.forEach((cell) => (regions[cell] = -1));
-    }
-  }
-  search(0);
-  return found;
+  return puzzleCore.solveDetails<CoreSolveResult>('shikaku', coreLevel(p), null, limit, 100_000).solutions;
 }
 
+const reasonText: Record<string, string> = {
+  'invalid-rectangle': 'Choose a rectangle inside the board.',
+  'missing-clue': 'Every region must contain its clue.',
+  'area-mismatch': 'The rectangle area must match its clue.',
+  overlap: 'Regions cannot overlap.',
+};
+
 export const engine: Engine<Payload, State, Action> = {
-  initial: (p) => ({ regions: [...p.initialRegions] }),
+  initial: (p) => puzzleCore.initialState<State>('shikaku', coreLevel(p)),
   validState: (p, state): state is State => {
-    const parsed = stateSchema.safeParse(state);
-    return (
-      parsed.success &&
-      parsed.data.regions.length === p.rows * p.cols &&
-      parsed.data.regions.every((region) => region >= -1 && region < p.clues.length)
-    );
+    if (!stateSchema.safeParse(state).success) return false;
+    try {
+      return puzzleCore.validateState<{ valid: boolean }>('shikaku', coreLevel(p), state).valid;
+    } catch {
+      return false;
+    }
   },
   apply(p, state, action) {
-    if (
-      action.type !== 'place' ||
-      !Number.isInteger(action.clue) ||
-      !p.clues[action.clue] ||
-      ![action.top, action.left, action.bottom, action.right].every(Number.isInteger) ||
-      action.top < 0 ||
-      action.left < 0 ||
-      action.bottom >= p.rows ||
-      action.right >= p.cols ||
-      action.top > action.bottom ||
-      action.left > action.right
-    ) {
-      return reject(state, 'Choose a rectangle inside the board.');
-    }
-    const cells = rectangleCells(p, action);
-    const clueCell = p.clues[action.clue]!.cell;
-    if (!cells.includes(clueCell)) return reject(state, 'Every region must contain its clue.');
-    if (cells.length !== p.clues[action.clue]!.area) {
-      return reject(state, 'The rectangle area must match its clue.');
-    }
-    if (cells.some((cell) => state.regions[cell] !== -1 && state.regions[cell] !== action.clue)) {
-      return reject(state, 'Regions cannot overlap.');
-    }
-    const regions = [...state.regions];
-    cells.forEach((cell) => {
-      regions[cell] = action.clue;
-    });
-    return accept({ regions });
+    const result = puzzleCore.transition<CoreTransition>('shikaku', coreLevel(p), state, action);
+    return {
+      ...result,
+      state: result.changed ? result.state : state,
+      reason: result.reason ? reasonText[result.reason] ?? result.reason : undefined,
+    };
   },
-  solved: (p, state) =>
-    state.regions.every((region) => region >= 0) &&
-    p.clues.every((clue, index) => {
-      const cells = regionCells(state, index);
-      return cells.length === clue.area && cells.includes(clue.cell) && isRectangle(p, cells);
-    }),
+  solved: (p, state) => puzzleCore.evaluate<{ solved: boolean }>('shikaku', coreLevel(p), state).solved,
   hint: (p, state, used) => {
-    const answer = solutions(p, 1)[0];
-    if (!answer) return null;
-    const clue = p.clues.findIndex((_, index) => regionCells(state, index).length === 0);
-    if (clue < 0) return null;
-    const cells = regionCells(answer, clue);
-    if (used === 0) return `Start with clue ${p.clues[clue]!.area}. Its rectangle includes ${cells.length} squares.`;
-    const first = cells[0]!;
-    return `Try the rectangle containing clue ${p.clues[clue]!.area} at row ${Math.floor(first / p.cols) + 1}, column ${(first % p.cols) + 1}.`;
+    const hint = puzzleCore.hint<CoreHint | null>('shikaku', coreLevel(p), state, used);
+    if (!hint) return null;
+    if (hint.kind === 'area') {
+      return `Start with clue ${hint.data.area}. Its rectangle includes ${hint.data.area} squares.`;
+    }
+    return `Try the rectangle containing clue ${hint.data.area} from row ${hint.data.top + 1}, column ${hint.data.left + 1} to row ${hint.data.bottom + 1}, column ${hint.data.right + 1}.`;
+  },
+  persistence: {
+    restore: (level, raw, fallbackAttemptId) => {
+      if (raw == null) return null;
+      try {
+        const result = puzzleCore.restoreSession<CoreRestoreResult>(
+          'shikaku',
+          coreLevel(level.payload, level),
+          raw,
+          fallbackAttemptId,
+        );
+        if (!result.restored) return null;
+        const { attemptId, state, history, moveCount, hintsUsed, revision } = result.session;
+        return { attemptId, state, history, moveCount, hintsUsed, revision };
+      } catch {
+        return null;
+      }
+    },
+    encode: (level, session) => puzzleCore.encodeSession('shikaku', coreLevel(level.payload, level), session),
   },
 };

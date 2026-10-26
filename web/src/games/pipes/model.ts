@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import * as puzzleCore from '../../generated/puzzle-core/small-wins-puzzle-core.mjs';
+import { puzzleCore } from '../../shared/lib/puzzle-core';
 import { type Engine, type Level, type PortableSession } from '../../shared/lib/engine';
 
 export const payloadSchema = z
@@ -62,8 +62,6 @@ type CoreRestoreResult = {
   reason?: string;
 };
 
-const encode = (value: unknown) => JSON.stringify(value);
-const decode = <T>(value: string): T => JSON.parse(value) as T;
 const coreLevel = (payload: Payload): CoreLevel => ({
   identity: {
     mechanicId: 'network',
@@ -105,35 +103,22 @@ const portableCoreLevel = (level: Level<Payload>): CoreLevel => ({
 
 export const engine: Engine<Payload, State, Action> = {
   initial: (payload) =>
-    decode<State>(puzzleCore.initialState('network', encode(coreLevel(payload)))),
+    puzzleCore.initialState<State>('network', coreLevel(payload)),
   validState: (payload, state): state is State => {
     try {
-      return decode<{ valid: boolean }>(
-        puzzleCore.validateState('network', encode(coreLevel(payload)), encode(state)),
-      ).valid;
+      return puzzleCore.validateState<{ valid: boolean }>('network', coreLevel(payload), state).valid;
     } catch {
       return false;
     }
   },
   apply: (payload, state, action) => {
-    const result = decode<CoreTransition>(
-      puzzleCore.transition(
-        'network',
-        encode(coreLevel(payload)),
-        encode(state),
-        encode(action),
-      ),
-    );
+    const result = puzzleCore.transition<CoreTransition>('network', coreLevel(payload), state, action);
     return result.changed ? result : { ...result, state };
   },
   solved: (payload, state) =>
-    decode<CoreEvaluation>(
-      puzzleCore.evaluate('network', encode(coreLevel(payload)), encode(state)),
-    ).solved,
+    puzzleCore.evaluate<CoreEvaluation>('network', coreLevel(payload), state).solved,
   hint: (payload, state, used) => {
-    const result = decode<CoreHint | null>(
-      puzzleCore.hint('network', encode(coreLevel(payload)), encode(state), used),
-    );
+    const result = puzzleCore.hint<CoreHint | null>('network', coreLevel(payload), state, used);
     if (!result) return null;
     const { cell, row, column, targetRotation } = result.data;
     if (result.kind === 'row') {
@@ -154,13 +139,8 @@ export const engine: Engine<Payload, State, Action> = {
     restore: (level, raw, fallbackAttemptId) => {
       if (raw == null) return null;
       try {
-        const result = decode<CoreRestoreResult>(
-          puzzleCore.restoreSession(
-            'network',
-            encode(portableCoreLevel(level)),
-            encode(raw),
-            fallbackAttemptId,
-          ),
+        const result = puzzleCore.restoreSession<CoreRestoreResult>(
+          'network', portableCoreLevel(level), raw, fallbackAttemptId,
         );
         if (!result.restored) return null;
         const { attemptId, state, history, moveCount, hintsUsed, revision } = result.session;
@@ -170,18 +150,7 @@ export const engine: Engine<Payload, State, Action> = {
       }
     },
     encode: (level, session) =>
-      decode<unknown>(
-        puzzleCore.encodeSession(
-          'network',
-          encode(portableCoreLevel(level)),
-          session.attemptId,
-          encode(session.state),
-          encode(session.history),
-          session.moveCount,
-          session.hintsUsed,
-          session.revision,
-        ),
-      ),
+      puzzleCore.encodeSession<unknown>('network', portableCoreLevel(level), session),
   },
 };
 
@@ -199,9 +168,7 @@ export function adjacent(payload: Payload, cell: number, direction: number): num
 }
 
 export function connections(payload: Payload, state: State) {
-  const result = decode<CoreInspection>(
-    puzzleCore.inspect('network', encode(coreLevel(payload)), encode(state)),
-  );
+  const result = puzzleCore.inspect<CoreInspection>('network', coreLevel(payload), state);
   return {
     reached: new Set(result.reached),
     leaks: result.leaks.map(({ cell, direction }) => ({ cell, dir: direction })),
@@ -209,7 +176,5 @@ export function connections(payload: Payload, state: State) {
 }
 
 export function pipeSolution(payload: Payload, budget = 20_000): State | null {
-  return decode<State | null>(
-    puzzleCore.solveWithBudget('network', encode(coreLevel(payload)), budget),
-  );
+  return puzzleCore.solveWithBudget<State | null>('network', coreLevel(payload), budget);
 }

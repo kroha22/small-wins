@@ -3,6 +3,7 @@ package dev.smallwins.puzzle.core
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNull
+import kotlin.test.assertTrue
 
 class CatalogTest {
     @Test
@@ -15,5 +16,19 @@ class CatalogTest {
         assertEquals("network", canonicalMechanicId("pipes"))
         assertEquals("route", canonicalMechanicId("waypoints"))
         assertNull(canonicalMechanicId("layer-restore"))
+    }
+
+    @Test
+    fun onlyExecutableMechanicsAdvertisePilotCapabilities() {
+        val executable = setOf("network", "purrdoku", "shikaku")
+        mechanicCatalog.forEach { entry ->
+            if (entry.mechanicId in executable) {
+                assertEquals(LibraryStage.PILOT, entry.stage)
+                assertTrue(entry.capabilities.isNotEmpty())
+            } else {
+                assertEquals(LibraryStage.RESEARCH, entry.stage)
+                assertTrue(entry.capabilities.isEmpty())
+            }
+        }
     }
 }

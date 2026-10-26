@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { engine, payloadSchema, solutions, type Payload } from './model';
+import levels from './levels.json';
 
 const payload: Payload = {
   rows: 2,
@@ -37,6 +38,21 @@ describe('Shikaku model', () => {
     expect(result.changed).toBe(false);
   });
 
+  it('can clear one rectangle without changing the others', () => {
+    let state = engine.initial(payload);
+    state = engine.apply(payload, state, {
+      type: 'place',
+      clue: 0,
+      top: 0,
+      left: 0,
+      bottom: 0,
+      right: 1,
+    }).state;
+    const cleared = engine.apply(payload, state, { type: 'clear', clue: 0 });
+    expect(cleared).toMatchObject({ accepted: true, changed: true, state: engine.initial(payload) });
+    expect(state.regions).toEqual([0, 0, -1, -1, -1, -1]);
+  });
+
   it('recognises a complete tiling', () => {
     let state = engine.initial(payload);
     for (const action of [
@@ -61,5 +77,36 @@ describe('Shikaku model', () => {
     const state = engine.initial(payload);
     engine.apply(payload, state, { type: 'place', clue: 0, top: 0, left: 0, bottom: 0, right: 1 });
     expect(state.regions).toEqual([-1, -1, -1, -1, -1, -1]);
+  });
+
+  it('round-trips the library session envelope and rejects changed content', () => {
+    const levelPayload = payloadSchema.parse(levels[0]!.payload);
+    const level = { ...levels[0]!, difficulty: 'tutorial' as const, payload: levelPayload };
+    const initial = engine.initial(levelPayload);
+    const moved = engine.apply(levelPayload, initial, {
+      type: 'place',
+      clue: 0,
+      top: 1,
+      left: 0,
+      bottom: 1,
+      right: 1,
+    }).state;
+    const session = {
+      attemptId: 'shikaku-web',
+      state: moved,
+      history: [initial],
+      moveCount: 1,
+      hintsUsed: 0,
+      revision: 1,
+    };
+    const encoded = engine.persistence!.encode(level, session);
+    expect(encoded).toMatchObject({
+      schemaVersion: 1,
+      identity: { mechanicId: 'shikaku', levelId: level.id },
+    });
+    expect(engine.persistence!.restore(level, encoded, 'fallback')).toEqual(session);
+    expect(
+      engine.persistence!.restore({ ...level, contentVersion: level.contentVersion + 1 }, encoded, 'fallback'),
+    ).toBeNull();
   });
 });

@@ -80,6 +80,28 @@ describe('Purrdoku', () => {
     expect(blocked.accepted).toBe(false);
     expect(blocked.reason).toContain('object');
   });
+  it('round-trips the library session envelope and rejects changed content', () => {
+    const level = { ...levels[0]!, difficulty: 'tutorial' as const, payload: p };
+    const initial = engine.initial(p);
+    const moved = engine.apply(p, initial, { type: 'placeCat', cat: 'ginger', cell: 0 }).state;
+    const session = {
+      attemptId: 'purrdoku-web',
+      state: moved,
+      history: [initial],
+      moveCount: 1,
+      hintsUsed: 1,
+      revision: 2,
+    };
+    const encoded = engine.persistence!.encode(level, session);
+    expect(encoded).toMatchObject({
+      schemaVersion: 1,
+      identity: { mechanicId: 'purrdoku', levelId: level.id },
+    });
+    expect(engine.persistence!.restore(level, encoded, 'fallback')).toEqual(session);
+    expect(
+      engine.persistence!.restore({ ...level, contentVersion: level.contentVersion + 1 }, encoded, 'fallback'),
+    ).toBeNull();
+  });
   it('rejects overlapping or empty rooms and colliding objects', () => {
     expect(
       payloadSchema.safeParse({
