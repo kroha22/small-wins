@@ -3,6 +3,7 @@ package dev.smallwins.puzzle.core.mechanics.placement
 import dev.smallwins.puzzle.core.ActivityCapability
 import dev.smallwins.puzzle.core.ActivityManifest
 import dev.smallwins.puzzle.core.ActivityPlugin
+import dev.smallwins.puzzle.core.ContinuationRandom
 import dev.smallwins.puzzle.core.DifficultyBand
 import dev.smallwins.puzzle.core.EngineEvent
 import dev.smallwins.puzzle.core.Evaluation
@@ -18,6 +19,7 @@ import dev.smallwins.puzzle.core.ValidationResult
 import dev.smallwins.puzzle.core.stableHash
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
+import kotlinx.serialization.json.contentOrNull
 import kotlinx.serialization.json.intOrNull
 
 const val PLACEMENT_RULES_VERSION = 1
@@ -144,6 +146,7 @@ object PlacementPlugin :
 
     override fun generate(request: GenerationRequest): GenerationResult<PlacementLevel, PlacementWitness, PlacementGeneratorMetrics> {
         require(request.generatorVersion == PLACEMENT_GENERATOR_VERSION)
+        if ((request.parameters["profile"] as? JsonPrimitive)?.contentOrNull == "ludeni-continuation-v1") return generateLudeniContinuation(request)
         val defaultSize = if (request.difficulty.band in setOf(DifficultyBand.HARD, DifficultyBand.EXPERT)) 4 else 3
         val size = request.parameters["size"].let { (it as? JsonPrimitive)?.intOrNull ?: defaultSize }.coerceIn(2, 8)
         val random = StableRandom("purrdoku/v$PLACEMENT_GENERATOR_VERSION/${request.seed}/$size")
@@ -184,6 +187,58 @@ object PlacementPlugin :
         }
         val level = levelForGeneration(request, payload)
         return GenerationResult(level, solution, PlacementGeneratorMetrics(size, payload.clues.size, nodes))
+    }
+
+    private fun generateLudeniContinuation(request: GenerationRequest): GenerationResult<PlacementLevel, PlacementWitness, PlacementGeneratorMetrics> {
+        val size = ((request.parameters["size"] as? JsonPrimitive)?.intOrNull ?: 5).coerceIn(4, 5)
+        val stage = ((request.parameters["stage"] as? JsonPrimitive)?.intOrNull ?: 0).coerceIn(0, 4)
+        val random = ContinuationRandom(request.seed)
+        val ids = listOf("ginger", "black", "white", "gray", "cream").take(size)
+        val entities = ids.map(::PlacementEntity)
+        val columns = random.shuffled((0 until size).toList())
+        val rows = random.shuffled((0 until size).toList())
+        val solution = PlacementState(ids.mapIndexed { index, id -> id to rows[index] * size + columns[index] }.toMap())
+        val zoneIds = listOf("kitchen", "living-room", "bedroom", "study", "hall")
+        val zones = MutableList(size) { row -> PlacementZone(zoneIds[row], MutableList(size) { column -> row * size + column }) }
+        repeat(size - 1) { index ->
+            val column = if (random.nextDouble() < .5) 0 else size - 1
+            val cell = index * size + column
+            if (index % 2 == 0 && cell !in solution.placements.values) {
+                zones[index] = zones[index].copy(cells = zones[index].cells.filterNot { it == cell })
+                zones[index + 1] = zones[index + 1].copy(cells = zones[index + 1].cells + cell)
+            }
+        }
+        val featureIds = listOf("window", "armchair", "bed", "bowl", "plant")
+        val features = zones.mapIndexed { index, zone -> PlacementFeature(featureIds[index], random.shuffled(zone.cells.filterNot { it in solution.placements.values }).first()) }
+        var payload = PlacementPayload(size, entities, zones, features, emptyList())
+        val candidates = mutableListOf<PlacementClue>()
+        entities.forEach { first ->
+            entities.filter { it != first }.forEach { second ->
+                candidates += PlacementClue("leftOf", first.id, other = second.id)
+                candidates += PlacementClue("above", first.id, other = second.id)
+            }
+            zones.forEach { zone -> candidates += PlacementClue("inZone", first.id, zone = zone.id); candidates += PlacementClue("notInZone", first.id, zone = zone.id) }
+            features.forEach { feature -> candidates += PlacementClue("adjacentToFeature", first.id, feature = feature.id); candidates += PlacementClue("notAdjacentToFeature", first.id, feature = feature.id) }
+        }
+        val clues = entities.flatMap { entity ->
+            val cell = solution.placements.getValue(entity.id)!!
+            listOf(PlacementClue("inRow", entity.id, value = cell / size), PlacementClue("inColumn", entity.id, value = cell % size))
+        }.toMutableList()
+        payload = payload.copy(clues = clues)
+        clues += random.shuffled(candidates.filter { clueStatus(payload, solution, it) == "satisfied" }).take(size * 3)
+        payload = payload.copy(clues = clues)
+        var removed = 0
+        val removalOrder = payload.clues.filter { it.value != null } + random.shuffled(payload.clues.filter { it.value == null })
+        for (clue in removalOrder) {
+            if (removed >= 16 + stage * 2) break
+            val reduced = payload.copy(clues = payload.clues.filterNot { it === clue })
+            val result = solveDetails(levelForGeneration(request, reduced), limit = 2, budget = 5_000)
+            if (!result.exceeded && result.solutions.size == 1) { payload = reduced; removed += 1 }
+        }
+        val level = levelForGeneration(request, payload)
+        val result = solveDetails(level, limit = 2, budget = 100_000)
+        require(!result.exceeded && result.solutions.size == 1) { "Unverified cat puzzle" }
+        return GenerationResult(level, result.solutions.first(), PlacementGeneratorMetrics(size, payload.clues.size, result.nodes))
     }
 
     override fun solve(level: PlacementLevel): PlacementWitness? = solveDetails(level, limit = 1, budget = 100_000).solutions.firstOrNull()

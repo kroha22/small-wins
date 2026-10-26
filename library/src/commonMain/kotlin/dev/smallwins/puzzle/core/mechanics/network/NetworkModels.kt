@@ -10,6 +10,7 @@ data class NetworkPayload(
     val sourceCell: Int,
     val ports: List<List<Int>>,
     val initialRotations: List<Int>,
+    val targetCell: Int? = null,
 )
 
 typealias NetworkLevel = PuzzleLevel<NetworkPayload>

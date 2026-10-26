@@ -17,6 +17,7 @@ import dev.smallwins.puzzle.core.ValidationIssue
 import dev.smallwins.puzzle.core.ValidationResult
 import dev.smallwins.puzzle.core.stableHash
 import kotlinx.serialization.json.JsonPrimitive
+import kotlinx.serialization.json.contentOrNull
 import kotlinx.serialization.json.intOrNull
 
 const val NETWORK_RULES_VERSION = 1
@@ -61,6 +62,9 @@ object NetworkPlugin :
         val cellCount = payload.rows * payload.cols
         if (payload.sourceCell !in 0 until cellCount) {
             issues += ValidationIssue("source.out-of-range", "$.payload.sourceCell")
+        }
+        if (payload.targetCell != null && payload.targetCell !in 0 until cellCount) {
+            issues += ValidationIssue("target.out-of-range", "$.payload.targetCell")
         }
         if (payload.ports.size != cellCount) {
             issues += ValidationIssue("ports.length", "$.payload.ports")
@@ -136,6 +140,7 @@ object NetworkPlugin :
         require(request.generatorVersion == NETWORK_GENERATOR_VERSION) {
             "Unsupported Network generator version: ${request.generatorVersion}"
         }
+        if ((request.parameters["profile"] as? JsonPrimitive)?.contentOrNull == "ludeni-v3") return generateLudeni(request)
         require(request.difficulty.normalized in 0.0..1.0) { "Difficulty must be between 0 and 1" }
         val defaultSize =
             when (request.difficulty.band) {
@@ -228,6 +233,45 @@ object NetworkPlugin :
         state: NetworkState,
     ): NetworkConnections = connections(level, state)
 
+    private fun generateLudeni(request: GenerationRequest): GenerationResult<NetworkLevel, NetworkWitness, NetworkGeneratorMetrics> {
+        val tutorial = request.difficulty.band == DifficultyBand.TUTORIAL
+        val t = request.difficulty.normalized.coerceIn(0.0, 1.0)
+        val size = if (tutorial) 3 else ludeniScale(t, 4, 6)
+        val random = networkLudeniRandom(request)
+        val path = mutableListOf<Int>()
+        val edges = mutableListOf<Pair<Int, Int>>()
+        if (tutorial) {
+            repeat(size) { row ->
+                val columns = if (row % 2 == 1) (size - 1 downTo 0) else (0 until size)
+                columns.forEach { path += row * size + it }
+            }
+            path.drop(1).forEachIndexed { index, cell -> edges += path[index] to cell }
+        } else {
+            val visited = mutableSetOf(0); val stack = mutableListOf(0); path += 0
+            while (stack.isNotEmpty()) {
+                val active = if (random.nextDouble() < t * .7) random.nextInt(stack.size) else stack.lastIndex
+                val current = stack[active]; val row = current / size; val column = current % size
+                val candidates = listOf(if (row > 0) current - size else null, if (column < size - 1) current + 1 else null, if (row < size - 1) current + size else null, if (column > 0) current - 1 else null).filterNotNull().filterNot { it in visited }
+                val next = random.shuffled(candidates).firstOrNull()
+                if (next == null) stack.removeAt(active) else { visited += next; stack += next; path += next; edges += current to next }
+            }
+            val transform = random.nextInt(8)
+            if (transform != 0) {
+                path.indices.forEach { index -> path[index] = ludeniTransformIndex(path[index], size, transform) }
+                edges.indices.forEach { index -> edges[index] = ludeniTransformIndex(edges[index].first, size, transform) to ludeniTransformIndex(edges[index].second, size, transform) }
+            }
+        }
+        val source = path.first(); val degree = MutableList(size * size) { 0 }
+        edges.forEach { (a, b) -> degree[a] += 1; degree[b] += 1 }
+        fun direction(from: Int, to: Int) = when (to) { from - size -> 0; from + 1 -> 1; from + size -> 2; else -> 3 }
+        val ports = List(size * size) { mutableListOf<Int>() }
+        edges.forEach { (a, b) -> ports[a] += direction(a, b); ports[b] += direction(b, a) }
+        val target = path.asReversed().firstOrNull { it != source && degree[it] == 1 } ?: path.last()
+        val payload = NetworkPayload(size, size, source, ports.map { it.toList() }, List(size * size) { 0 }, target)
+        val level = PuzzleLevel(PuzzleIdentity("network", "network", "generated", "generated-${stableHash("ludeni-v3/${request.seed}/${request.variant}").toString(16)}", 1, NETWORK_RULES_VERSION, 1, 1, request.seed), request.difficulty, payload)
+        return GenerationResult(level, NetworkState(List(size * size) { 0 }), NetworkGeneratorMetrics(size, size, size * size, ports.count { it.size == 1 }, ports.count { it.size >= 3 }))
+    }
+
     fun solveWithBudget(
         level: NetworkLevel,
         budget: Int,
@@ -281,6 +325,29 @@ object NetworkPlugin :
 
         return search()
     }
+}
+
+private fun networkLudeniRandom(request: GenerationRequest): StableRandom {
+    val mode = if (request.difficulty.band == DifficultyBand.TUTORIAL) "tutorial" else "regular"
+    val number = request.difficulty.normalized.let { if (it % 1.0 == 0.0) it.toInt().toString() else it.toString() }
+    return StableRandom("network:v3:$mode:$number:${request.seed}:${request.variant ?: "1"}")
+}
+
+private fun ludeniScale(t: Double, minimum: Int, maximum: Int) = kotlin.math.floor(minimum + (maximum - minimum) * t + .5).toInt()
+
+private fun ludeniTransformIndex(index: Int, size: Int, transform: Int): Int {
+    val row = index / size; val column = index % size
+    val point = when (transform) {
+        1 -> column to size - 1 - row
+        2 -> size - 1 - row to size - 1 - column
+        3 -> size - 1 - column to row
+        4 -> row to size - 1 - column
+        5 -> size - 1 - row to column
+        6 -> column to row
+        7 -> size - 1 - column to size - 1 - row
+        else -> row to column
+    }
+    return point.first * size + point.second
 }
 
 fun portsAt(

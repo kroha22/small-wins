@@ -3,6 +3,7 @@ package dev.smallwins.puzzle.core.mechanics.colorneighbors
 import dev.smallwins.puzzle.core.ActivityCapability
 import dev.smallwins.puzzle.core.ActivityManifest
 import dev.smallwins.puzzle.core.ActivityPlugin
+import dev.smallwins.puzzle.core.ContinuationRandom
 import dev.smallwins.puzzle.core.DifficultyBand
 import dev.smallwins.puzzle.core.Evaluation
 import dev.smallwins.puzzle.core.GenerationRequest
@@ -17,6 +18,7 @@ import dev.smallwins.puzzle.core.ValidationResult
 import dev.smallwins.puzzle.core.stableHash
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
+import kotlinx.serialization.json.contentOrNull
 import kotlinx.serialization.json.intOrNull
 
 const val COLOR_NEIGHBORS_RULES_VERSION = 1
@@ -149,6 +151,7 @@ object ColorNeighborsPlugin :
         request: GenerationRequest,
     ): GenerationResult<ColorNeighborsLevel, ColorNeighborsWitness, ColorNeighborsGeneratorMetrics> {
         require(request.generatorVersion == COLOR_NEIGHBORS_GENERATOR_VERSION)
+        if ((request.parameters["profile"] as? JsonPrimitive)?.contentOrNull == "ludeni-continuation-v1") return generateLudeniContinuation(request)
         val defaultSize = when (request.difficulty.band) {
             DifficultyBand.TUTORIAL, DifficultyBand.EASY -> 3
             DifficultyBand.MEDIUM -> 4
@@ -189,6 +192,30 @@ object ColorNeighborsPlugin :
             solutionWitness = solved.solutions.first(),
             metrics = ColorNeighborsGeneratorMetrics(rows, cols, colorCount, clues.size, solved.nodes),
         )
+    }
+
+    private fun generateLudeniContinuation(
+        request: GenerationRequest,
+    ): GenerationResult<ColorNeighborsLevel, ColorNeighborsWitness, ColorNeighborsGeneratorMetrics> {
+        val size = ((request.parameters["size"] as? JsonPrimitive)?.intOrNull ?: 5).coerceIn(2, 5)
+        val stage = ((request.parameters["stage"] as? JsonPrimitive)?.intOrNull ?: 0).coerceIn(0, 4)
+        val colorCount = 3
+        val random = ContinuationRandom(request.seed)
+        val answer = List(size * size) { random.nextInt(colorCount) }
+        var clues = answer.mapIndexed { cell, color -> ColorNeighborClue(cell, color, neighbors(cell, size, size).count { answer[it] == color }) }
+        val floor = listOf(16, 15, 14, 13, 1)[stage]
+        for (candidate in random.shuffled(clues.toList())) {
+            if (clues.size <= floor) break
+            val reduced = clues.filterNot { it === candidate }
+            val payload = ColorNeighborsPayload(size, size, colorCount, reduced)
+            val deduction = deduce(payload, initialStateFor(payload))
+            if (!deduction.contradiction && deduction.domains.all(::isSingleton)) clues = reduced
+        }
+        val payload = ColorNeighborsPayload(size, size, colorCount, clues)
+        val level = generatedLevel(request, payload)
+        val result = solveDetails(level, limit = 2, budget = 200_000)
+        require(!result.exceeded && result.solutions.size == 1) { "Unverified neighbor puzzle" }
+        return GenerationResult(level, result.solutions.first(), ColorNeighborsGeneratorMetrics(size, size, colorCount, clues.size, result.nodes))
     }
 
     override fun solve(level: ColorNeighborsLevel): ColorNeighborsWitness? =

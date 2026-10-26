@@ -18,6 +18,7 @@ import dev.smallwins.puzzle.core.ValidationResult
 import dev.smallwins.puzzle.core.stableHash
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
+import kotlinx.serialization.json.contentOrNull
 import kotlinx.serialization.json.intOrNull
 import kotlin.math.PI
 import kotlin.math.abs
@@ -146,6 +147,7 @@ object UntanglePlugin :
 
     override fun generate(request: GenerationRequest): GenerationResult<UntangleLevel, UntangleWitness, UntangleGeneratorMetrics> {
         require(request.generatorVersion == UNTANGLE_GENERATOR_VERSION)
+        if ((request.parameters["profile"] as? JsonPrimitive)?.contentOrNull == "ludeni-v3") return generateLudeni(request)
         val defaultCount = when (request.difficulty.band) {
             DifficultyBand.TUTORIAL, DifficultyBand.EASY -> 4
             DifficultyBand.MEDIUM -> 5
@@ -183,6 +185,45 @@ object UntanglePlugin :
         val witness = UntangleState(solutionNodes.associate { it.id to UntanglePoint(it.x, it.y) })
         require(evaluate(level, witness).solved)
         return GenerationResult(level, witness, UntangleGeneratorMetrics(count, edges.size, conflicts(payload, initialState(level)).size))
+    }
+
+    private fun generateLudeni(request: GenerationRequest): GenerationResult<UntangleLevel, UntangleWitness, UntangleGeneratorMetrics> {
+        val tutorial = request.difficulty.band == DifficultyBand.TUTORIAL
+        val t = request.difficulty.normalized.coerceIn(0.0, 1.0)
+        val count = if (tutorial) 4 else ludeniUntangleScale(t, 6, 10)
+        val random = ludeniUntangleRandom(request)
+        val pairs = MutableList(count) { index -> index to (index + 1) % count }
+        val chordCount = ludeniUntangleScale(t, 1, count - 3)
+        val diagonals = random.shuffled((0 until count).flatMap { a -> (a + 1 until count).map { b -> a to b } }.filter { (a, b) -> b - a > 1 && !(a == 0 && b == count - 1) })
+        val chords = mutableListOf<Pair<Int, Int>>()
+        for ((a, b) in diagonals) {
+            if (chords.size >= chordCount) break
+            if (chords.any { (c, d) -> a < c && c < b && b < d || c < a && a < d && d < b }) continue
+            chords += a to b
+        }
+        pairs += chords
+        val circle = List(count) { index ->
+            val angle = -PI / 2 + index.toDouble() / count * PI * 2
+            UntanglePoint(50 + kotlin.math.cos(angle) * 38, 50 + kotlin.math.sin(angle) * 38)
+        }
+        fun crossingCount(points: List<UntanglePoint>) = pairs.indices.sumOf { first -> pairs.drop(first + 1).count { second ->
+            val a = pairs[first].first; val b = pairs[first].second; val c = second.first; val d = second.second
+            setOf(a, b, c, d).size == 4 && strictSegmentsCross(points[a], points[b], points[c], points[d])
+        } }
+        val solution = circle
+        val scrambled = if (tutorial) listOf(0, 2, 1, 3).map { circle[it] } else {
+            var result: List<UntanglePoint>? = null
+            repeat(120) {
+                if (result == null) random.shuffled(circle.indices.toList()).map { circle[it] }.let { if (crossingCount(it) >= ludeniUntangleScale(t, 1, 8)) result = it }
+            }
+            result ?: error("Could not scramble planar graph")
+        }
+        val nodes = scrambled.mapIndexed { index, point -> UntangleNode("node-$index", point.x, point.y) }
+        val edges = pairs.mapIndexed { index, (a, b) -> UntangleEdge("edge-$index", "node-$a", "node-$b") }
+        val payload = UntanglePayload(nodes, edges, UntangleBounds(6.0, 6.0, 94.0, 94.0), .001, coordinateScale = 1000)
+        val level = PuzzleLevel(PuzzleIdentity("untangle", "untangle", "generated", "generated-${stableHash("ludeni-v3/${request.seed}/${request.variant}").toString(16)}", 1, UNTANGLE_RULES_VERSION, 1, 1, request.seed), request.difficulty, payload)
+        val witness = UntangleState(solution.mapIndexed { index, point -> "node-$index" to point }.toMap())
+        return GenerationResult(level, witness, UntangleGeneratorMetrics(count, edges.size, crossingCount(scrambled)))
     }
 
     override fun solve(level: UntangleLevel): UntangleWitness? {
@@ -230,6 +271,19 @@ object UntanglePlugin :
         }
         return result.toList()
     }
+}
+
+private fun ludeniUntangleRandom(request: GenerationRequest): StableRandom {
+    val mode = if (request.difficulty.band == DifficultyBand.TUTORIAL) "tutorial" else "regular"
+    val number = request.difficulty.normalized.let { if (it % 1.0 == 0.0) it.toInt().toString() else it.toString() }
+    return StableRandom("untangle:v3:$mode:$number:${request.seed}:${request.variant ?: "1"}")
+}
+
+private fun ludeniUntangleScale(t: Double, minimum: Int, maximum: Int) = kotlin.math.floor(minimum + (maximum - minimum) * t + .5).toInt()
+
+private fun strictSegmentsCross(a: UntanglePoint, b: UntanglePoint, c: UntanglePoint, d: UntanglePoint): Boolean {
+    fun orient(p: UntanglePoint, q: UntanglePoint, r: UntanglePoint) = (q.x - p.x) * (r.y - p.y) - (q.y - p.y) * (r.x - p.x)
+    return orient(a, b, c) * orient(a, b, d) < 0 && orient(c, d, a) * orient(c, d, b) < 0
 }
 
 private fun placementsValid(payload: UntanglePayload, state: UntangleState) =

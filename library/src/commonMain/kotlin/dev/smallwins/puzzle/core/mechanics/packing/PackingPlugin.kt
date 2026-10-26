@@ -16,6 +16,7 @@ import dev.smallwins.puzzle.core.Transition
 import dev.smallwins.puzzle.core.ValidationIssue
 import dev.smallwins.puzzle.core.ValidationResult
 import dev.smallwins.puzzle.core.stableHash
+import dev.smallwins.puzzle.core.stableNumber
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
 
@@ -144,7 +145,7 @@ object PackingPlugin : ActivityPlugin<PackingLevel, PackingState, PackingAction,
         val size = if (tutorial) 3 else scale(t, 4, 6)
         val count = if (tutorial) 3 else scale(t, 4, 8)
         val mode = if (tutorial) "tutorial" else "regular"
-        val random = StableRandom("packing:v3:$mode:$t:${request.seed}:packing-attempt:$attempt:${request.variant ?: "1"}")
+        val random = StableRandom("packing:v3:$mode:${stableNumber(t)}:${request.seed}:packing-attempt:$attempt:${request.variant ?: "1"}")
         var path = List(size) { y -> List(size) { x -> PackingPoint(if (y % 2 == 1) size - 1 - x else x, y) } }.flatten()
         repeat(250) {
             val first = random.nextDouble() < .5
@@ -219,6 +220,6 @@ private fun connected(cells: List<PackingPoint>): Boolean {
 }
 
 private fun distance(a: PackingPoint, b: PackingPoint) = kotlin.math.abs(a.x - b.x) + kotlin.math.abs(a.y - b.y)
-private fun scale(t: Double, a: Int, b: Int) = kotlin.math.round(a + (b - a) * t).toInt()
+private fun scale(t: Double, a: Int, b: Int) = kotlin.math.floor(a + (b - a) * t + .5).toInt()
 private fun issue(code: String, path: String) = ValidationIssue(code, path)
 private fun rejected(state: PackingState, reason: String) = Transition(false, false, state, reason)

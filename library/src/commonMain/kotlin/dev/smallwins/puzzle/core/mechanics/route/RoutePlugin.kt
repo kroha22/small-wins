@@ -18,6 +18,7 @@ import dev.smallwins.puzzle.core.ValidationResult
 import dev.smallwins.puzzle.core.stableHash
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
+import kotlinx.serialization.json.contentOrNull
 import kotlinx.serialization.json.intOrNull
 import kotlin.math.abs
 
@@ -127,6 +128,7 @@ object RoutePlugin :
 
     override fun generate(request: GenerationRequest): GenerationResult<RouteLevel, RouteWitness, RouteGeneratorMetrics> {
         require(request.generatorVersion == ROUTE_GENERATOR_VERSION)
+        if ((request.parameters["profile"] as? JsonPrimitive)?.contentOrNull == "ludeni-v3") return generateLudeni(request)
         val defaultSize = when (request.difficulty.band) {
             DifficultyBand.TUTORIAL, DifficultyBand.EASY -> 4
             else -> 5
@@ -162,6 +164,57 @@ object RoutePlugin :
         val witness = stateForPath(payload, route.map(::cellId))
         require(evaluate(level, witness).solved)
         return GenerationResult(level, witness, RouteGeneratorMetrics(size, size, route.size, blocked.size))
+    }
+
+    private fun generateLudeni(request: GenerationRequest): GenerationResult<RouteLevel, RouteWitness, RouteGeneratorMetrics> {
+        val tutorial = request.difficulty.band == DifficultyBand.TUTORIAL
+        val t = request.difficulty.normalized.coerceIn(0.0, 1.0)
+        val size = ludeniRouteScale(t, 4, 7)
+        val target = size * size - 1
+        val blockedCount = if (tutorial) ((request.variant?.toIntOrNull() ?: 1) - 1).coerceAtLeast(0) else ludeniRouteScale(t, 3, kotlin.math.floor(size * size * .27).toInt())
+        val waypointCount = if (tutorial) ((request.variant?.toIntOrNull() ?: 1) - 2).coerceAtLeast(0) else ludeniRouteScale(t, 2, 4)
+        val random = ludeniRouteRandom(request)
+        val candidates = (1 until size * size - 1).toList()
+        val requiredDetour = ludeniRouteScale(t, 1, 3)
+        val minimumLength = 2 * size - 1 + 2 * requiredDetour
+        var route: List<Int>? = null
+        var blocked = emptyList<Int>()
+        repeat(100) {
+            if (route != null) return@repeat
+            val path = mutableListOf(0); val used = mutableSetOf(0); var visits = 0
+            lateinit var search: (Int) -> Boolean
+            search = { cell ->
+                visits += 1
+                if (visits > 2000) false
+                else if (cell == target) path.size >= minimumLength
+                else {
+                    val x = cell % size; val y = cell / size
+                    val nexts = random.shuffled(listOf(if (y > 0) cell - size else null, if (x < size - 1) cell + 1 else null, if (y < size - 1) cell + size else null, if (x > 0) cell - 1 else null).filterNotNull().filterNot { it in used })
+                    var found = false
+                    for (next in nexts) {
+                        used += next; path += next
+                        if (search(next)) { found = true; break }
+                        path.removeAt(path.lastIndex); used.remove(next)
+                    }
+                    found
+                }
+            }
+            if (!search(0)) return@repeat
+            val stops = path.drop(1).dropLast(1)
+            if (!tutorial && stops.none { a -> stops.any { b -> (a % size - b % size) * (a / size - b / size) < 0 && minOf(kotlin.math.abs(a % size - b % size), kotlin.math.abs(a / size - b / size)) >= requiredDetour } }) return@repeat
+            route = path.toList(); blocked = random.shuffled(candidates.filterNot { it in used }).take(blockedCount)
+        }
+        val witnessPath = route ?: error("Could not construct route witness")
+        val waypoints = MutableList(waypointCount) { index -> witnessPath[((index + 1) * (witnessPath.size - 1)) / (waypointCount + 1)] }
+        if (!tutorial) {
+            val pairs = random.shuffled(witnessPath.drop(1).dropLast(1).flatMap { a -> witnessPath.drop(1).dropLast(1).filter { b -> a < b && (a % size - b % size) * (a / size - b / size) < 0 && minOf(kotlin.math.abs(a % size - b % size), kotlin.math.abs(a / size - b / size)) >= requiredDetour }.map { b -> a to b } })
+            val pair = pairs.first(); waypoints[0] = pair.first; waypoints[1] = pair.second
+        }
+        val uniqueStops = waypoints.distinct().toMutableList()
+        for (stop in random.shuffled(witnessPath.drop(1).dropLast(1))) { if (uniqueStops.size >= waypointCount) break; if (stop !in uniqueStops) uniqueStops += stop }
+        val payload = gridPayload(size, size, 0, target, uniqueStops, blocked)
+        val level = PuzzleLevel(PuzzleIdentity("route", "route", "generated", "generated-${stableHash("ludeni-v3/${request.seed}/${request.variant}").toString(16)}", 1, ROUTE_RULES_VERSION, 1, 1, request.seed), request.difficulty, payload)
+        return GenerationResult(level, stateForPath(payload, witnessPath.map(::cellId)), RouteGeneratorMetrics(size, size, witnessPath.size, blocked.size))
     }
 
     override fun solve(level: RouteLevel): RouteWitness? = solveDetails(level, initialState(level), 1, 100_000).solutions.firstOrNull()
@@ -257,6 +310,14 @@ object RoutePlugin :
         return state.copy(deadEndDetected = !isSolved(level.payload, state) && !result.exceeded && result.solutions.isEmpty())
     }
 }
+
+private fun ludeniRouteRandom(request: GenerationRequest): StableRandom {
+    val mode = if (request.difficulty.band == DifficultyBand.TUTORIAL) "tutorial" else "regular"
+    val number = request.difficulty.normalized.let { if (it % 1.0 == 0.0) it.toInt().toString() else it.toString() }
+    return StableRandom("route:v3:$mode:$number:${request.seed}:${request.variant ?: "1"}")
+}
+
+private fun ludeniRouteScale(t: Double, minimum: Int, maximum: Int) = kotlin.math.floor(minimum + (maximum - minimum) * t + .5).toInt()
 
 private fun rawStart(p: RoutePayload, state: RouteState, startId: String): RouteState? {
     val start = p.starts.firstOrNull { it.id == startId } ?: return null

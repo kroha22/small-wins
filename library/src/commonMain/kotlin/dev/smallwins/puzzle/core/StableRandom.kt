@@ -35,3 +35,6 @@ fun stableHash(text: String): UInt {
     text.forEach { character -> hash = (hash xor character.code.toUInt()) * 16777619u }
     return hash
 }
+
+fun stableNumber(value: Double): String =
+    if (value.isFinite() && value % 1.0 == 0.0) value.toLong().toString() else value.toString()

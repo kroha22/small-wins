@@ -16,6 +16,7 @@ import dev.smallwins.puzzle.core.Transition
 import dev.smallwins.puzzle.core.ValidationIssue
 import dev.smallwins.puzzle.core.ValidationResult
 import dev.smallwins.puzzle.core.stableHash
+import dev.smallwins.puzzle.core.stableNumber
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
 
@@ -87,7 +88,7 @@ object SokobanPlugin : ActivityPlugin<SokobanLevel, SokobanState, SokobanAction,
             return GenerationResult(level, SokobanWitness(listOf("right", "right"), 2), SokobanGeneratorMetrics(6, 1, 2, 2, 0))
         }
         val t = request.difficulty.normalized.coerceIn(0.0, 1.0); val size = scale(t, 7, 8); val boxCount = 2
-        val random = StableRandom("sokoban:v3:regular:$t:${request.seed}:${request.variant ?: "1"}")
+        val random = StableRandom("sokoban:v3:regular:${stableNumber(t)}:${request.seed}:${request.variant ?: "1"}")
         val directions = directions(size); val opposite = mapOf("up" to "down", "down" to "up", "left" to "right", "right" to "left")
         val interior = (1 until size - 1).flatMap { y -> (1 until size - 1).map { x -> y * size + x } }
         repeat(800) { attempt ->
@@ -195,6 +196,6 @@ private fun reachablePaths(size: Int, player: Int, boxes: Set<Int>, walls: Set<I
 private fun directions(size: Int) = listOf("up" to -size, "right" to 1, "down" to size, "left" to -1)
 private fun delta(size: Int, direction: String) = directions(size).first { it.first == direction }.second
 private fun horizontalWrap(size: Int, from: Int, to: Int, direction: String) = direction in setOf("left", "right") && from / size != to / size
-private fun scale(t: Double, a: Int, b: Int) = kotlin.math.round(a + (b - a) * t).toInt()
+private fun scale(t: Double, a: Int, b: Int) = kotlin.math.floor(a + (b - a) * t + .5).toInt()
 private fun issue(code: String, path: String) = ValidationIssue(code, path)
 private fun rejected(state: SokobanState, reason: String) = Transition(false, false, state, reason)
