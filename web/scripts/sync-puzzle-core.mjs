@@ -11,6 +11,7 @@ const distributionDirectory = resolve(
   'build/compileSync/js/main/productionLibrary/kotlin',
 );
 const generatedDirectory = resolve(webDirectory, 'src/generated/puzzle-core');
+const syncStatePath = resolve(libraryDirectory, 'build/puzzle-core-sync-state.json');
 const entrypoint = resolve(distributionDirectory, 'small-wins-puzzle-core.mjs');
 
 async function newestModified(path) {
@@ -40,7 +41,10 @@ const inputs = [
   resolve(libraryDirectory, 'src/jsMain'),
 ];
 const inputModified = Math.max(...(await Promise.all(inputs.map(newestModified))));
-const shouldBuild = !(await exists(entrypoint)) || (await newestModified(entrypoint)) < inputModified;
+const previousInputModified = await readFile(syncStatePath, 'utf8')
+  .then((value) => JSON.parse(value).inputModified)
+  .catch(() => null);
+const shouldBuild = !(await exists(entrypoint)) || previousInputModified !== inputModified;
 
 if (shouldBuild) {
   const result = spawnSync('./gradlew', ['jsBrowserProductionLibraryDistribution'], {
@@ -50,6 +54,8 @@ if (shouldBuild) {
   if (result.status !== 0) {
     throw new Error(`Kotlin/JS build failed with status ${result.status ?? 'unknown'}`);
   }
+  await mkdir(dirname(syncStatePath), { recursive: true });
+  await writeFile(syncStatePath, `${JSON.stringify({ inputModified })}\n`);
 }
 
 await rm(generatedDirectory, { recursive: true, force: true });

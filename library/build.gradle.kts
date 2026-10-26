@@ -27,7 +27,13 @@ kotlin {
 
     js(IR) {
         browser()
-        nodejs()
+        nodejs {
+            testTask {
+                useMocha {
+                    timeout = "10s"
+                }
+            }
+        }
         binaries.library()
         generateTypeScriptDefinitions()
         compilerOptions {

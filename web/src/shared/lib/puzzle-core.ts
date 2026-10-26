@@ -1,6 +1,7 @@
 import * as generated from '../../generated/puzzle-core/small-wins-puzzle-core.mjs';
 
 export type MechanicId =
+  | 'color-neighbors'
   | 'habitat-search'
   | 'network'
   | 'packing'
@@ -34,7 +35,7 @@ export const puzzleCore = {
   solveWithBudget: <T>(mechanicId: 'network', level: unknown, budget: number) =>
     decode<T>(generated.solveWithBudget(mechanicId, encode(level), budget)),
   solveDetails: <T>(
-    mechanicId: 'purrdoku' | 'route' | 'shikaku',
+    mechanicId: 'color-neighbors' | 'purrdoku' | 'route' | 'shikaku',
     level: unknown,
     state: unknown | null,
     limit: number,

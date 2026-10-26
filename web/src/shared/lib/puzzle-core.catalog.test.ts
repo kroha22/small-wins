@@ -16,6 +16,7 @@ describe('portable puzzle core catalog', () => {
       .sort();
 
     expect(implemented).toEqual([
+      'color-neighbors',
       'habitat-search',
       'network',
       'packing',

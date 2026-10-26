@@ -66,7 +66,7 @@ val mechanicCatalog: List<MechanicCatalogEntry> =
         entry("habitat-search", listOf("wildlife-survey"), MechanicFamily.OBSERVATION, LibraryStage.PILOT, solved + ActivityCapability.HINTS),
         entry("sokoban", listOf("cargo-push"), MechanicFamily.MOVEMENT, LibraryStage.PILOT, solved + ActivityCapability.HINTS),
         entry("packing", listOf("cargo-packing"), MechanicFamily.PACKING, LibraryStage.PILOT, solved + ActivityCapability.HINTS),
-        research("color-neighbors", family = MechanicFamily.DEDUCTION),
+        entry("color-neighbors", family = MechanicFamily.DEDUCTION, stage = LibraryStage.PILOT, capabilities = solved + ActivityCapability.HINTS),
         research("spatial-deduction", listOf("murr-doku"), MechanicFamily.DEDUCTION),
         research("grid-move", family = MechanicFamily.MOVEMENT),
         research("one-stroke", family = MechanicFamily.ROUTE),

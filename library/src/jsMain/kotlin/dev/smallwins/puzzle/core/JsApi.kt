@@ -2,6 +2,10 @@
 
 package dev.smallwins.puzzle.core
 
+import dev.smallwins.puzzle.core.mechanics.colorneighbors.ColorNeighborsAction
+import dev.smallwins.puzzle.core.mechanics.colorneighbors.ColorNeighborsLevel
+import dev.smallwins.puzzle.core.mechanics.colorneighbors.ColorNeighborsPlugin
+import dev.smallwins.puzzle.core.mechanics.colorneighbors.ColorNeighborsState
 import dev.smallwins.puzzle.core.mechanics.network.NetworkAction
 import dev.smallwins.puzzle.core.mechanics.network.NetworkLevel
 import dev.smallwins.puzzle.core.mechanics.network.NetworkPlugin
@@ -47,6 +51,7 @@ fun generate(
     requestJson: String,
 ): String =
     when (canonicalMechanicId(mechanicId)) {
+        "color-neighbors" -> libraryJson.encodeToString(ColorNeighborsPlugin.generate(libraryJson.decodeFromString(requestJson)))
         "network" -> libraryJson.encodeToString(NetworkPlugin.generate(libraryJson.decodeFromString(requestJson)))
         "habitat-search" -> libraryJson.encodeToString(HabitatPlugin.generate(libraryJson.decodeFromString(requestJson)))
         "packing" -> libraryJson.encodeToString(PackingPlugin.generate(libraryJson.decodeFromString(requestJson)))
@@ -64,6 +69,12 @@ fun validateLevel(
     levelJson: String,
 ): String =
     when (canonicalMechanicId(mechanicId)) {
+        "color-neighbors" -> {
+            val result = runCatching {
+                ColorNeighborsPlugin.validateLevel(libraryJson.decodeFromString<ColorNeighborsLevel>(levelJson))
+            }.getOrElse { ValidationResult(false, listOf(ValidationIssue("json.invalid", "$"))) }
+            libraryJson.encodeToString(result)
+        }
         "network" -> {
             val result =
                 runCatching { NetworkPlugin.validateLevel(libraryJson.decodeFromString<NetworkLevel>(levelJson)) }
@@ -124,6 +135,9 @@ fun initialState(
     levelJson: String,
 ): String =
     when (canonicalMechanicId(mechanicId)) {
+        "color-neighbors" -> libraryJson.encodeToString(
+            ColorNeighborsPlugin.initialState(libraryJson.decodeFromString<ColorNeighborsLevel>(levelJson)),
+        )
         "network" -> libraryJson.encodeToString(NetworkPlugin.initialState(libraryJson.decodeFromString<NetworkLevel>(levelJson)))
         "habitat-search" -> libraryJson.encodeToString(HabitatPlugin.initialState(libraryJson.decodeFromString<HabitatLevel>(levelJson)))
         "packing" -> libraryJson.encodeToString(PackingPlugin.initialState(libraryJson.decodeFromString<PackingLevel>(levelJson)))
@@ -142,6 +156,11 @@ fun validateState(
     stateJson: String,
 ): String =
     when (canonicalMechanicId(mechanicId)) {
+        "color-neighbors" -> {
+            val level = libraryJson.decodeFromString<ColorNeighborsLevel>(levelJson)
+            val state = libraryJson.decodeFromString<ColorNeighborsState>(stateJson)
+            libraryJson.encodeToString(ColorNeighborsPlugin.validateState(level, state))
+        }
         "network" -> {
             val level = libraryJson.decodeFromString<NetworkLevel>(levelJson)
             val state = libraryJson.decodeFromString<NetworkState>(stateJson)
@@ -193,6 +212,12 @@ fun transition(
     actionJson: String,
 ): String =
     when (canonicalMechanicId(mechanicId)) {
+        "color-neighbors" -> {
+            val level = libraryJson.decodeFromString<ColorNeighborsLevel>(levelJson)
+            val state = libraryJson.decodeFromString<ColorNeighborsState>(stateJson)
+            val action = libraryJson.decodeFromString<ColorNeighborsAction>(actionJson)
+            libraryJson.encodeToString(ColorNeighborsPlugin.transition(level, state, action))
+        }
         "network" -> {
             val level = libraryJson.decodeFromString<NetworkLevel>(levelJson)
             val state = libraryJson.decodeFromString<NetworkState>(stateJson)
@@ -251,6 +276,11 @@ fun evaluate(
     stateJson: String,
 ): String =
     when (canonicalMechanicId(mechanicId)) {
+        "color-neighbors" -> {
+            val level = libraryJson.decodeFromString<ColorNeighborsLevel>(levelJson)
+            val state = libraryJson.decodeFromString<ColorNeighborsState>(stateJson)
+            libraryJson.encodeToString(ColorNeighborsPlugin.evaluate(level, state))
+        }
         "network" -> {
             val level = libraryJson.decodeFromString<NetworkLevel>(levelJson)
             val state = libraryJson.decodeFromString<NetworkState>(stateJson)
@@ -301,6 +331,11 @@ fun inspect(
     stateJson: String,
 ): String =
     when (canonicalMechanicId(mechanicId)) {
+        "color-neighbors" -> {
+            val level = libraryJson.decodeFromString<ColorNeighborsLevel>(levelJson)
+            val state = libraryJson.decodeFromString<ColorNeighborsState>(stateJson)
+            libraryJson.encodeToString(ColorNeighborsPlugin.inspect(level, state))
+        }
         "network" -> {
             val level = libraryJson.decodeFromString<NetworkLevel>(levelJson)
             val state = libraryJson.decodeFromString<NetworkState>(stateJson)
@@ -320,6 +355,9 @@ fun solve(
     levelJson: String,
 ): String =
     when (canonicalMechanicId(mechanicId)) {
+        "color-neighbors" -> libraryJson.encodeToString(
+            ColorNeighborsPlugin.solve(libraryJson.decodeFromString<ColorNeighborsLevel>(levelJson)),
+        )
         "network" -> libraryJson.encodeToString(NetworkPlugin.solve(libraryJson.decodeFromString<NetworkLevel>(levelJson)))
         "habitat-search" -> libraryJson.encodeToString(HabitatPlugin.solve(libraryJson.decodeFromString<HabitatLevel>(levelJson)))
         "packing" -> libraryJson.encodeToString(PackingPlugin.solve(libraryJson.decodeFromString<PackingLevel>(levelJson)))
@@ -360,6 +398,12 @@ fun solveDetails(
     budget: Int,
 ): String =
     when (canonicalMechanicId(mechanicId)) {
+        "color-neighbors" -> {
+            val level = libraryJson.decodeFromString<ColorNeighborsLevel>(levelJson)
+            val state = stateJson?.let { libraryJson.decodeFromString<ColorNeighborsState>(it) }
+                ?: ColorNeighborsPlugin.initialState(level)
+            libraryJson.encodeToString(ColorNeighborsPlugin.solveDetails(level, state, limit, budget))
+        }
         "purrdoku" -> {
             val level = libraryJson.decodeFromString<PlacementLevel>(levelJson)
             val state = stateJson?.let { libraryJson.decodeFromString<PlacementState>(it) } ?: PlacementPlugin.initialState(level)
@@ -385,6 +429,11 @@ fun hint(
     used: Int,
 ): String =
     when (canonicalMechanicId(mechanicId)) {
+        "color-neighbors" -> {
+            val level = libraryJson.decodeFromString<ColorNeighborsLevel>(levelJson)
+            val state = libraryJson.decodeFromString<ColorNeighborsState>(stateJson)
+            libraryJson.encodeToString(ColorNeighborsPlugin.hint(level, state, used))
+        }
         "network" -> {
             val level = libraryJson.decodeFromString<NetworkLevel>(levelJson)
             val state = libraryJson.decodeFromString<NetworkState>(stateJson)
@@ -435,6 +484,13 @@ fun freshSession(
     attemptId: String,
 ): String =
     when (canonicalMechanicId(mechanicId)) {
+        "color-neighbors" -> {
+            val level = libraryJson.decodeFromString<ColorNeighborsLevel>(levelJson)
+            SessionCodec.encode(
+                SessionCodec.fresh(level.identity, ColorNeighborsPlugin.initialState(level), attemptId),
+                ColorNeighborsState.serializer(),
+            )
+        }
         "network" -> {
             val level = libraryJson.decodeFromString<NetworkLevel>(levelJson)
             SessionCodec.encode(
@@ -500,6 +556,21 @@ fun encodeSession(
     revision: Int,
 ): String =
     when (canonicalMechanicId(mechanicId)) {
+        "color-neighbors" -> {
+            val level = libraryJson.decodeFromString<ColorNeighborsLevel>(levelJson)
+            val session = PuzzleSession(
+                identity = level.identity,
+                attemptId = attemptId,
+                state = libraryJson.decodeFromString<ColorNeighborsState>(stateJson),
+                history = libraryJson.decodeFromString(ListSerializer(ColorNeighborsState.serializer()), historyJson),
+                moveCount = moveCount,
+                hintsUsed = hintsUsed,
+                revision = revision,
+            )
+            SessionCodec.encodeValidated(session, level.identity, ColorNeighborsState.serializer()) {
+                ColorNeighborsPlugin.validateState(level, it)
+            }
+        }
         "network" -> {
             val level = libraryJson.decodeFromString<NetworkLevel>(levelJson)
             val session =
@@ -635,6 +706,17 @@ fun restoreSession(
     fallbackAttemptId: String,
 ): String =
     when (canonicalMechanicId(mechanicId)) {
+        "color-neighbors" -> {
+            val level = libraryJson.decodeFromString<ColorNeighborsLevel>(levelJson)
+            val result = SessionCodec.restore(
+                expectedIdentity = level.identity,
+                initialState = ColorNeighborsPlugin.initialState(level),
+                raw = sessionJson,
+                fallbackAttemptId = fallbackAttemptId,
+                stateSerializer = ColorNeighborsState.serializer(),
+            ) { ColorNeighborsPlugin.validateState(level, it) }
+            libraryJson.encodeToString(SessionRestoreResult.serializer(ColorNeighborsState.serializer()), result)
+        }
         "network" -> {
             val level = libraryJson.decodeFromString<NetworkLevel>(levelJson)
             val result =
