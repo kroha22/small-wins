@@ -1,89 +1,203 @@
 import { z } from 'zod';
-import { accept, reject, type Engine } from '../../shared/lib/engine';
+import { accept, reject, type Engine, type Level, type PortableSession } from '../../shared/lib/engine';
+import { puzzleCore } from '../../shared/lib/puzzle-core';
+import {
+  payloadSchema,
+  type Action,
+  type LocalAction,
+  type LocalState,
+  type Mark,
+  type Payload,
+  type State,
+} from './legacy-model';
+
+export { payloadSchema };
+export type { Action, LocalAction, LocalState, Mark, Payload, State };
+
+type CoreMark = 'UNKNOWN' | 'FOUND' | 'EMPTY';
+type CoreState = { marks: CoreMark[] };
+type CorePayload = {
+  rows: number;
+  cols: number;
+  theme: string;
+  rowCounts: number[];
+  columnCounts: number[];
+  groups: { id: string; length: number; species: string }[];
+  occupied: number[];
+};
+type CoreLevel = {
+  identity: {
+    mechanicId: 'habitat-search';
+    productGameId: 'wildlife-survey';
+    levelPackId: string;
+    levelId: string;
+    schemaVersion: 1;
+    rulesVersion: 1;
+    contentVersion: number;
+  };
+  difficulty: {
+    band: 'tutorial' | 'easy' | 'medium' | 'hard';
+    normalized: number;
+    parameters: Record<string, never>;
+  };
+  payload: CorePayload;
+};
+type CoreTransition = { accepted: boolean; changed: boolean; state: CoreState; reason?: string };
+type CoreHint = {
+  kind: 'scan-row' | 'exact-cell';
+  data: { cell: number; row: number; column: number; mark: 'found' | 'empty' };
+};
+type CoreRestoreResult = { restored: boolean; session: PortableSession<CoreState>; reason?: string };
 
 const markSchema = z.enum(['unknown', 'found', 'empty']);
-export const payloadSchema = z
-  .object({
-    rows: z.number().int().min(4).max(8),
-    cols: z.number().int().min(4).max(8),
-    theme: z.enum(['Burrows', 'Pond Life']),
-    rowCounts: z.array(z.number().int().min(0)),
-    colCounts: z.array(z.number().int().min(0)),
-    chains: z.array(z.object({ id: z.string(), length: z.number().int().min(1).max(4), species: z.enum(['fish', 'turtle', 'squirrel', 'rabbit']) })).min(1),
-    occupied: z.array(z.number().int().nonnegative()),
-    localOccupied: z.array(z.array(z.number().int().nonnegative())).length(2).optional(),
-  })
-  .superRefine((p, ctx) => {
-    const size = p.rows * p.cols;
-    if (p.rowCounts.length !== p.rows || p.colCounts.length !== p.cols)
-      ctx.addIssue({ code: 'custom', message: 'Edge clues must match the board.' });
-    if (p.occupied.some((cell) => cell >= size) || new Set(p.occupied).size !== p.occupied.length)
-      ctx.addIssue({ code: 'custom', message: 'Occupied cells must be unique and inside the board.' });
-    if (p.occupied.length !== p.chains.reduce((sum, chain) => sum + chain.length, 0))
-      ctx.addIssue({ code: 'custom', message: 'Chain lengths must match occupied cells.' });
-    if (p.rowCounts.reduce((a, b) => a + b, 0) !== p.occupied.length || p.colCounts.reduce((a, b) => a + b, 0) !== p.occupied.length)
-      ctx.addIssue({ code: 'custom', message: 'Edge clues must match the occupied total.' });
-    if (p.localOccupied && p.localOccupied.some((board) => board.some((cell) => cell >= size) || new Set(board).size !== board.length))
-      ctx.addIssue({ code: 'custom', message: 'Local boards must contain unique cells inside the board.' });
-  });
+const stateSchema = z.object({ marks: z.array(markSchema) });
+const difficultyValue = (difficulty: Level<Payload>['difficulty']) =>
+  difficulty === 'tutorial' ? 0 : difficulty === 'easy' ? 0.25 : difficulty === 'hard' ? 0.75 : 0.5;
+const toCoreMark = (mark: Mark): CoreMark => mark.toUpperCase() as CoreMark;
+const fromCoreMark = (mark: CoreMark): Mark => mark.toLowerCase() as Mark;
+const toCoreState = (state: State): CoreState => ({ marks: state.marks.map(toCoreMark) });
+const fromCoreState = (state: CoreState): State => ({ marks: state.marks.map(fromCoreMark) });
 
-export type Payload = z.infer<typeof payloadSchema>;
-export type Mark = z.infer<typeof markSchema>;
-export type State = { marks: Mark[] };
-export type Action = { type: 'mark'; cell: number; mark: Mark };
+const withOccupied = (payload: Payload, occupied: number[]): Payload => ({
+  ...payload,
+  occupied,
+  rowCounts: Array.from({ length: payload.rows }, (_, row) => occupied.filter((cell) => Math.floor(cell / payload.cols) === row).length),
+  colCounts: Array.from({ length: payload.cols }, (_, column) => occupied.filter((cell) => cell % payload.cols === column).length),
+});
 
-export type LocalState = { players: State[]; activePlayer: 0 | 1 };
-export type LocalAction = Action | { type: 'pass' } | { type: 'restart' };
+const corePayload = (payload: Payload): CorePayload => ({
+  rows: payload.rows,
+  cols: payload.cols,
+  theme: payload.theme,
+  rowCounts: payload.rowCounts,
+  columnCounts: payload.colCounts,
+  groups: payload.chains,
+  occupied: payload.occupied,
+});
+
+const coreLevel = (
+  payload: Payload,
+  metadata: Pick<Level<Payload>, 'id' | 'difficulty' | 'contentVersion'> = {
+    id: 'legacy-adapter',
+    difficulty: 'medium',
+    contentVersion: 1,
+  },
+): CoreLevel => ({
+  identity: {
+    mechanicId: 'habitat-search',
+    productGameId: 'wildlife-survey',
+    levelPackId: 'web-authored',
+    levelId: metadata.id,
+    schemaVersion: 1,
+    rulesVersion: 1,
+    contentVersion: metadata.contentVersion,
+  },
+  difficulty: { band: metadata.difficulty, normalized: difficultyValue(metadata.difficulty), parameters: {} },
+  payload: corePayload(payload),
+});
 
 export const engine: Engine<Payload, State, Action> = {
-  initial: (p) => ({ marks: Array(p.rows * p.cols).fill('unknown') }),
-  validState: (p, state): state is State =>
-    z.object({ marks: z.array(markSchema).length(p.rows * p.cols) }).safeParse(state).success,
-  apply(p, state, action) {
-    if (action.type !== 'mark' || !Number.isInteger(action.cell) || action.cell < 0 || action.cell >= p.rows * p.cols)
-      return reject(state, 'Choose a cell on the board.');
-    if (!markSchema.safeParse(action.mark).success)
-      return reject(state, 'Choose found, empty or clear.');
-    const marks = [...state.marks];
-    marks[action.cell] = marks[action.cell] === action.mark ? 'unknown' : action.mark;
-    return accept({ marks });
+  initial: (payload) => fromCoreState(puzzleCore.initialState<CoreState>('habitat-search', coreLevel(payload))),
+  validState: (payload, state): state is State => {
+    if (!stateSchema.safeParse(state).success) return false;
+    try {
+      return puzzleCore.validateState<{ valid: boolean }>(
+        'habitat-search',
+        coreLevel(payload),
+        toCoreState(state as State),
+      ).valid;
+    } catch {
+      return false;
+    }
   },
-  solved: (p, state) =>
-    p.occupied.every((cell) => state.marks[cell] === 'found'),
-  hint: (p, state, used) => {
-    const cell = p.occupied.find((candidate) => state.marks[candidate] !== 'found') ??
-      Array.from({ length: p.rows * p.cols }, (_, candidate) => candidate).find(
-        (candidate) => !p.occupied.includes(candidate) && state.marks[candidate] !== 'empty',
-      );
-    if (cell === undefined) return null;
-    const row = Math.floor(cell / p.cols) + 1;
-    const col = (cell % p.cols) + 1;
-    return used === 0
-      ? `Scan row ${row}. One marked cell belongs to a hidden ${p.theme.toLowerCase()} chain.`
-      : `Mark row ${row}, column ${col} as ${p.occupied.includes(cell) ? 'found' : 'empty'}.`;
+  apply(payload, state, action) {
+    const result = puzzleCore.transition<CoreTransition>(
+      'habitat-search',
+      coreLevel(payload),
+      toCoreState(state),
+      { type: action.type, cell: action.cell, mark: toCoreMark(action.mark) },
+    );
+    return {
+      ...result,
+      state: result.changed ? fromCoreState(result.state) : state,
+      reason: result.reason === 'cell-out-of-bounds' ? 'Choose a cell on the board.' : result.reason,
+    };
+  },
+  solved: (payload, state) =>
+    puzzleCore.evaluate<{ solved: boolean }>('habitat-search', coreLevel(payload), toCoreState(state)).solved,
+  hint: (payload, state, used) => {
+    const hint = puzzleCore.hint<CoreHint | null>(
+      'habitat-search',
+      coreLevel(payload),
+      toCoreState(state),
+      used,
+    );
+    if (!hint) return null;
+    if (hint.kind === 'scan-row')
+      return `Scan row ${hint.data.row + 1}. One marked cell belongs to a hidden ${payload.theme.toLowerCase()} chain.`;
+    return `Mark row ${hint.data.row + 1}, column ${hint.data.column + 1} as ${hint.data.mark}.`;
+  },
+  persistence: {
+    restore: (level, raw, fallbackAttemptId) => {
+      if (raw == null) return null;
+      try {
+        const result = puzzleCore.restoreSession<CoreRestoreResult>(
+          'habitat-search',
+          coreLevel(level.payload, level),
+          raw,
+          fallbackAttemptId,
+        );
+        if (!result.restored) return null;
+        const { attemptId, state, history, moveCount, hintsUsed, revision } = result.session;
+        return {
+          attemptId,
+          state: fromCoreState(state),
+          history: history.map(fromCoreState),
+          moveCount,
+          hintsUsed,
+          revision,
+        };
+      } catch {
+        return null;
+      }
+    },
+    encode: (level, session) =>
+      puzzleCore.encodeSession('habitat-search', coreLevel(level.payload, level), {
+        ...session,
+        state: toCoreState(session.state),
+        history: session.history.map(toCoreState),
+      }),
   },
 };
 
 export const localEngine: Engine<Payload, LocalState, LocalAction> = {
-  initial: (p) => ({ players: [engine.initial(p), engine.initial(p)], activePlayer: 0 }),
-  validState: (p, state): state is LocalState => {
-    if (!z.object({ activePlayer: z.union([z.literal(0), z.literal(1)]), players: z.array(z.unknown()).length(2) }).safeParse(state).success) return false;
-    const value = state as LocalState;
-    return value.players.every((player) => engine.validState(p, player));
+  initial: (payload) => ({ players: [engine.initial(payload), engine.initial(payload)], activePlayer: 0 }),
+  validState: (payload, state): state is LocalState => {
+    if (
+      typeof state !== 'object' ||
+      state == null ||
+      !('activePlayer' in state) ||
+      !('players' in state) ||
+      ((state as LocalState).activePlayer !== 0 && (state as LocalState).activePlayer !== 1) ||
+      !Array.isArray((state as LocalState).players) ||
+      (state as LocalState).players.length !== 2
+    ) return false;
+    return (state as LocalState).players.every((player, index) =>
+      engine.validState(withOccupied(payload, payload.localOccupied?.[index] ?? payload.occupied), player),
+    );
   },
-  apply(p, state, action) {
+  apply(payload, state, action) {
     if (action.type === 'pass') return accept({ ...state, activePlayer: state.activePlayer === 0 ? 1 : 0 });
-    if (action.type === 'restart') return accept({ players: [engine.initial(p), engine.initial(p)], activePlayer: 0 });
-    const board = p.localOccupied?.[state.activePlayer];
-    const playerPayload = board ? { ...p, occupied: board } : p;
+    if (action.type === 'restart') return accept({ players: [engine.initial(payload), engine.initial(payload)], activePlayer: 0 });
+    const playerPayload = withOccupied(payload, payload.localOccupied?.[state.activePlayer] ?? payload.occupied);
     const next = engine.apply(playerPayload, state.players[state.activePlayer]!, action);
     if (!next.accepted) return reject(state, next.reason ?? 'That mark could not be placed.');
     const players = [...state.players] as [State, State];
     players[state.activePlayer] = next.state;
     return { ...next, state: { players, activePlayer: state.activePlayer } };
   },
-  solved: (p, state) => {
-    const target = p.localOccupied?.[state.activePlayer];
-    return engine.solved(target ? { ...p, occupied: target } : p, state.players[state.activePlayer]!);
+  solved: (payload, state) => {
+    const playerPayload = withOccupied(payload, payload.localOccupied?.[state.activePlayer] ?? payload.occupied);
+    return engine.solved(playerPayload, state.players[state.activePlayer]!);
   },
 };

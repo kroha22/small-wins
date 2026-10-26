@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { engine, intersects, conflicts, type Payload } from './model';
+import levels from './levels.json';
 const p: Payload = {
   nodes: [
     { id: 'A', x: 20, y: 20, fixed: false },
@@ -70,5 +71,15 @@ describe('Untangle', () => {
       { id: 'B', x: NaN, y: 50 },
     ])
       expect(engine.apply(l, s, { type: 'moveNode', ...action }).accepted).toBe(false);
+  });
+  it('round-trips a portable session and rejects changed content', () => {
+    const payload = levels[0]!.payload as Payload;
+    const level = { ...levels[0]!, difficulty: 'tutorial' as const, payload };
+    const state = engine.initial(payload);
+    const session = { attemptId: 'untangle-web', state, history: [], moveCount: 0, hintsUsed: 0, revision: 0 };
+    const encoded = engine.persistence!.encode(level, session);
+    expect(encoded).toMatchObject({ identity: { mechanicId: 'untangle', productGameId: 'untangle' } });
+    expect(engine.persistence!.restore(level, encoded, 'fallback')).toEqual(session);
+    expect(engine.persistence!.restore({ ...level, contentVersion: 2 }, encoded, 'fallback')).toBeNull();
   });
 });

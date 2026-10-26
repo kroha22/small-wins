@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { engine, payloadSchema, type Payload } from './model';
+import levels from './levels.json';
 
 const payload: Payload = {
   rows: 4,
@@ -36,5 +37,19 @@ describe('Wildlife Survey model', () => {
     const state = engine.initial(payload);
     expect(engine.hint!(payload, state, 0)).toContain('Scan row');
     expect(engine.hint!(payload, state, 1)).toContain('column');
+  });
+
+  it('round-trips a portable session and rejects changed content', () => {
+    const authored = levels[0]!.payload as Payload;
+    const level = { ...levels[0]!, difficulty: 'tutorial' as const, payload: authored };
+    const initial = engine.initial(authored);
+    const state = engine.apply(authored, initial, { type: 'mark', cell: 0, mark: 'found' }).state;
+    const session = { attemptId: 'habitat-web', state, history: [initial], moveCount: 1, hintsUsed: 1, revision: 2 };
+    const encoded = engine.persistence!.encode(level, session);
+    expect(encoded).toMatchObject({
+      identity: { mechanicId: 'habitat-search', productGameId: 'wildlife-survey' },
+    });
+    expect(engine.persistence!.restore(level, encoded, 'fallback')).toEqual(session);
+    expect(engine.persistence!.restore({ ...level, contentVersion: 2 }, encoded, 'fallback')).toBeNull();
   });
 });

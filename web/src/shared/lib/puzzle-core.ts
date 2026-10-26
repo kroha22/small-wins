@@ -1,6 +1,12 @@
 import * as generated from '../../generated/puzzle-core/small-wins-puzzle-core.mjs';
 
-export type MechanicId = 'network' | 'purrdoku' | 'route' | 'shikaku';
+export type MechanicId =
+  | 'habitat-search'
+  | 'network'
+  | 'purrdoku'
+  | 'route'
+  | 'shikaku'
+  | 'untangle';
 
 const encode = (value: unknown) => JSON.stringify(value);
 const decode = <T>(value: string): T => JSON.parse(value) as T;
