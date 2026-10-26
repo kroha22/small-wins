@@ -87,7 +87,7 @@ object SokobanPlugin : ActivityPlugin<SokobanLevel, SokobanState, SokobanAction,
             return GenerationResult(level, SokobanWitness(listOf("right", "right"), 2), SokobanGeneratorMetrics(6, 1, 2, 2, 0))
         }
         val t = request.difficulty.normalized.coerceIn(0.0, 1.0); val size = scale(t, 7, 8); val boxCount = 2
-        val random = StableRandom("sokoban:v3:regular:$t:${request.seed}:1")
+        val random = StableRandom("sokoban:v3:regular:$t:${request.seed}:${request.variant ?: "1"}")
         val directions = directions(size); val opposite = mapOf("up" to "down", "down" to "up", "left" to "right", "right" to "left")
         val interior = (1 until size - 1).flatMap { y -> (1 until size - 1).map { x -> y * size + x } }
         repeat(800) { attempt ->

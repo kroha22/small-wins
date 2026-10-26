@@ -144,7 +144,7 @@ object PackingPlugin : ActivityPlugin<PackingLevel, PackingState, PackingAction,
         val size = if (tutorial) 3 else scale(t, 4, 6)
         val count = if (tutorial) 3 else scale(t, 4, 8)
         val mode = if (tutorial) "tutorial" else "regular"
-        val random = StableRandom("packing:v3:$mode:$t:${request.seed}:packing-attempt:$attempt:1")
+        val random = StableRandom("packing:v3:$mode:$t:${request.seed}:packing-attempt:$attempt:${request.variant ?: "1"}")
         var path = List(size) { y -> List(size) { x -> PackingPoint(if (y % 2 == 1) size - 1 - x else x, y) } }.flatten()
         repeat(250) {
             val first = random.nextDouble() < .5
