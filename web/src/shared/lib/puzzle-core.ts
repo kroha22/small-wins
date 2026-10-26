@@ -3,9 +3,11 @@ import * as generated from '../../generated/puzzle-core/small-wins-puzzle-core.m
 export type MechanicId =
   | 'habitat-search'
   | 'network'
+  | 'packing'
   | 'purrdoku'
   | 'route'
   | 'shikaku'
+  | 'sokoban'
   | 'untangle';
 
 const encode = (value: unknown) => JSON.stringify(value);
