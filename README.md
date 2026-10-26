@@ -32,7 +32,7 @@ Small Wins contains six independent games and 42 playable levels, including a ge
 
 | Game | Focus | Core interaction |
 | --- | --- | --- |
-| **Purrdoku** | Logic · Deduction | Place every cat while satisfying row, column, and clue constraints. |
+| **Where Was the Cat?** | Logic · Deduction | Place every cat while satisfying row, column, and clue constraints. |
 | **Burrow Network** | Patterns · Connection | Rotate tunnel pieces into one complete network with no open ends. |
 | **Untangle** | Spatial · Perspective | Move nodes until no lines cross, overlap, or touch another node. |
 | **Waypoints** | Planning · Discovery | Collect every carrot and reach the flag without revisiting a cell. |

@@ -22,3 +22,13 @@ test('cancels a pending corner selection without adding a move', async ({ page }
   await expect(first).not.toHaveClass(/corner-selected/);
   await expect(page.locator('.moves')).toHaveText('0moves');
 });
+
+test('draws a rectangle by selecting two corners', async ({ page }) => {
+  await page.goto('/#/games/shikaku/levels/tutorial');
+  const cells = page.locator('.shikaku-cell');
+  await cells.nth(3).click();
+  await expect(cells.nth(3)).toHaveClass(/corner-selected/);
+  await cells.nth(6).click();
+  await expect(page.locator('.moves')).toHaveText('1moves');
+  await expect(page.locator('.shikaku-cell.region-0')).toHaveCount(2);
+});

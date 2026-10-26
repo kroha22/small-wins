@@ -73,4 +73,12 @@ describe('Persistence boundary', () => {
     });
     expect(() => writeRecord('progress', { done: true })).not.toThrow();
   });
+  it('clears product-specific records without touching other sites data', () => {
+    writeRecord('wildlife-notes:tutorial:v1', { solo: [1], local: [[], []] });
+    localStorage.setItem('unrelated', 'keep');
+    clearRecords();
+    expect(readRecord('wildlife-notes:tutorial:v1')).toBeNull();
+    expect(localStorage.getItem('unrelated')).toBe('keep');
+    localStorage.removeItem('unrelated');
+  });
 });

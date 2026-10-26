@@ -14,6 +14,7 @@ test('catalog, filters, settings focus and deep links', async ({ page }) => {
     page.getByRole('heading', { name: 'Small puzzles. Good little moments.' }),
   ).toBeVisible();
   await expect(page.getByRole('link', { name: /Let’s play/ })).toHaveCount(6);
+  await expect(page.getByRole('link', { name: /Where Was the Cat\?/ })).toBeVisible();
   const settings = page.getByRole('button', { name: 'Settings' });
   await settings.click();
   await expect(page.getByRole('dialog')).toBeVisible();
@@ -25,7 +26,7 @@ test('catalog, filters, settings focus and deep links', async ({ page }) => {
   await page.goto('/#/games/unknown/levels/tutorial');
   await expect(page.getByRole('heading', { name: 'This puzzle wandered off.' })).toBeVisible();
 });
-test('Purrdoku keyboard, invalid moves, hints, solve, undo and reload', async ({ page }) => {
+test('Where Was the Cat keyboard, invalid moves, hints, solve, undo and reload', async ({ page }) => {
   await page.goto('/#/games/purrdoku/levels/tutorial');
   await expect(page.getByRole('heading', { name: 'Meet the cats' })).toBeVisible();
   await page.locator('[data-cell="0"]').focus();
@@ -50,7 +51,10 @@ test('Purrdoku keyboard, invalid moves, hints, solve, undo and reload', async ({
 test('Pipes tutorial and persistent completion', async ({ page }) => {
   await page.goto('/#/games/pipes/levels/tutorial');
   const moves = witnesses.pipes[0]!;
+  const firstPipe = page.locator(`[data-cell="${moves[0]!.cell}"]`);
+  const beforeTurn = await firstPipe.getAttribute('aria-label');
   await cell(page, moves[0]!.cell);
+  await expect(firstPipe).not.toHaveAttribute('aria-label', beforeTurn!);
   const saved = await page.evaluate(() =>
     JSON.parse(localStorage.getItem('small-wins:v1:active-attempt')!),
   );
@@ -105,6 +109,11 @@ test('Untangle drag cancellation never commits a preview', async ({ page, isMobi
 });
 test('Habitat Search restores solo progress and keeps local player boards private', async ({ page }) => {
   await page.goto('/#/games/wildlife-survey/levels/tutorial');
+  await expect(page.getByRole('button', { name: 'Observe', exact: true })).toHaveAttribute('aria-pressed', 'true');
+  await page.getByRole('button', { name: 'Note ×', exact: true }).click();
+  await expect(page.getByRole('button', { name: 'Note ×', exact: true })).toHaveAttribute('aria-pressed', 'true');
+  await cell(page, 1);
+  await page.getByRole('button', { name: 'Observe', exact: true }).click();
   await cell(page, 0);
   const saved = await page.evaluate(() =>
     JSON.parse(localStorage.getItem('small-wins:v1:active-attempt')!),
@@ -112,6 +121,7 @@ test('Habitat Search restores solo progress and keeps local player boards privat
   expect(saved.identity.mechanicId).toBe('habitat-search');
   await page.reload();
   await expect(page.getByRole('button', { name: /row 1, column 1, found/i })).toBeVisible();
+  await expect(page.getByRole('button', { name: /row 1, column 2, noted/i })).toBeVisible();
   for (const occupied of habitatLevels[0]!.payload.occupied.slice(1)) await cell(page, occupied);
   await expect(page.getByRole('region', { name: 'Puzzle complete' })).toBeVisible();
 

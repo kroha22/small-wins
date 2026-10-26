@@ -3,7 +3,7 @@ import { BookOpen, X } from 'lucide-react';
 import { type GameId } from '../lib/engine';
 const rules: Record<GameId, { name: string; items: string[] }> = {
   purrdoku: {
-    name: 'Purrdoku',
+    name: 'Where Was the Cat?',
     items: [
       'Place one cat in each row and column. Most squares stay empty. Choose a cat, then choose a square.',
       'A cat may move freely to any empty square, or return to the tray with Remove. The clues are checked when you finish the puzzle.',

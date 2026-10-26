@@ -65,7 +65,7 @@ test('old completion is retained but the new house puzzle needs a new completion
     await page.locator(`[data-cell="${action.cell}"]`).click();
   }
   await expect(page.getByRole('region', { name: 'Puzzle complete' })).toBeVisible();
-  await page.getByRole('link', { name: 'All Purrdoku puzzles' }).click();
+  await page.getByRole('link', { name: 'All Where Was the Cat? puzzles' }).click();
   await expect(page.getByText('1 / 6 little wins')).toBeVisible();
   await expect(page.getByRole('link', { name: /Puzzle 01/ })).toContainText('Complete');
   const progress = await page.evaluate(() =>

@@ -4,7 +4,7 @@ export const catalog = [
   {
     id: 'purrdoku',
     contentVersion: 4,
-    name: 'Purrdoku',
+    name: 'Where Was the Cat?',
     eyebrow: 'A place for every cat',
     description: 'A cosy house. A few clues. Find where every cat belongs.',
     rule: 'Place one cat in each row and column, and satisfy every clue.',

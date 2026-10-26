@@ -18,7 +18,7 @@ export default function Game({ levelId }: { levelId: string }) {
   const anchorRef = useRef<number | null>(null);
   const previewCellRef = useRef<number | null>(null);
   const dragging = useRef(false);
-  const suppressClick = useRef(false);
+  const dragStart = useRef<number | null>(null);
   const p = level.payload;
 
   function choose(cell: number) {
@@ -71,10 +71,8 @@ export default function Game({ levelId }: { levelId: string }) {
           const cell = (event.target as HTMLElement).closest<HTMLElement>('[data-cell]');
           if (!cell) return;
           dragging.current = true;
-          anchorRef.current = Number(cell.dataset.cell);
-          previewCellRef.current = anchorRef.current;
-          setAnchor(anchorRef.current);
-          setPreviewCell(anchorRef.current);
+          dragStart.current = Number(cell.dataset.cell);
+          previewCellRef.current = dragStart.current;
           event.currentTarget.setPointerCapture(event.pointerId);
         }}
         onPointerUp={(event) => {
@@ -89,14 +87,18 @@ export default function Game({ levelId }: { levelId: string }) {
           const releasedCell = cell && event.currentTarget.contains(cell)
             ? Number(cell.dataset.cell)
             : coordinateCell ?? previewCellRef.current;
+          const startedCell = dragStart.current;
           dragging.current = false;
+          dragStart.current = null;
           previewCellRef.current = null;
-          if (releasedCell === anchorRef.current) {
-            suppressClick.current = false;
+          if (releasedCell === startedCell) {
+            if (startedCell !== null) choose(startedCell);
             return;
           }
-          suppressClick.current = true;
-          if (releasedCell !== null) choose(releasedCell);
+          if (releasedCell !== null && startedCell !== null) {
+            anchorRef.current = startedCell;
+            choose(releasedCell);
+          }
           else { anchorRef.current = null; setAnchor(null); setPreviewCell(null); }
         }}
         onPointerMove={(event) => {
@@ -104,6 +106,10 @@ export default function Game({ levelId }: { levelId: string }) {
           const cell = document.elementFromPoint(event.clientX, event.clientY)?.closest<HTMLElement>('[data-cell]');
           if (cell && event.currentTarget.contains(cell)) {
             previewCellRef.current = Number(cell.dataset.cell);
+            if (dragStart.current !== previewCellRef.current) {
+              anchorRef.current = dragStart.current;
+              setAnchor(dragStart.current);
+            }
             setPreviewCell(previewCellRef.current);
           }
         }}
@@ -115,7 +121,7 @@ export default function Game({ levelId }: { levelId: string }) {
             setPreviewCell(null);
           }
         }}
-        onPointerCancel={() => { dragging.current = false; anchorRef.current = null; previewCellRef.current = null; setAnchor(null); setPreviewCell(null); }}
+        onPointerCancel={() => { dragging.current = false; dragStart.current = null; previewCellRef.current = null; setPreviewCell(null); }}
       >
       <Grid rows={p.rows} cols={p.cols} label="Shikaku grid. Drag between two opposite corners to draw a rectangle.">
         {Array.from({ length: p.rows * p.cols }, (_, cell) => {
@@ -126,10 +132,7 @@ export default function Game({ levelId }: { levelId: string }) {
               key={cell}
               className={`grid-cell shikaku-cell region-${region >= 0 ? region % 4 : 'empty'} ${anchor === cell ? 'corner-selected' : ''} ${inPreview(cell) ? 'preview-cell' : ''}`}
               data-cell={cell}
-              onClick={() => {
-                if (suppressClick.current) { suppressClick.current = false; return; }
-                choose(cell);
-              }}
+              onClick={(event) => { if (event.detail === 0) choose(cell); }}
               aria-label={`${cellName(cell, p.cols)}${clue >= 0 ? `, clue ${p.clues[clue]!.area}` : ''}${region >= 0 ? ', covered' : ', empty'}`}
             >
               {clue >= 0 ? <strong className={`clue-badge clue-${clue % 4}`}>{p.clues[clue]!.area}</strong> : null}

@@ -30,7 +30,9 @@ export default function Game({ levelId }: { levelId: string }) {
       >
         {p.ports.map((_, cell) => {
           const ports = p.ports[cell]!;
-          const rotation = session.state.rotations[cell]! * 90;
+          const turns = session.state.rotations[cell]!;
+          const rotation = turns * 90;
+          const visiblePorts = ports.map((direction) => (direction + turns) % 4);
           const connected = c.reached.has(cell);
           return (
             <button
@@ -39,7 +41,7 @@ export default function Game({ levelId }: { levelId: string }) {
               data-cell={cell}
               tabIndex={cell === 0 ? 0 : -1}
               aria-disabled={solved}
-              aria-label={`${cellName(cell, p.cols)}, openings ${ports.map((d) => ['up', 'right', 'down', 'left'][d]).join(' and ')}${cell === p.sourceCell ? ', source' : ''}, ${connected ? 'connected' : 'not connected'}`}
+              aria-label={`${cellName(cell, p.cols)}, openings ${visiblePorts.map((d) => ['up', 'right', 'down', 'left'][d]).join(' and ')}${cell === p.sourceCell ? ', source' : ''}, ${connected ? 'connected' : 'not connected'}`}
               onClick={(event) =>
                 play({ type: 'rotate', cell, quarterTurns: event.shiftKey ? -1 : 1 })
               }

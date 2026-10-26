@@ -45,12 +45,15 @@ export function writeRecord(key: string, value: unknown) {
 }
 export function clearRecords() {
   memory.clear();
-  for (const key of ['progress', 'settings', 'active-attempt']) {
-    try {
-      if (typeof localStorage !== 'undefined') localStorage.removeItem(prefix + key);
-    } catch {
-      unavailable();
+  try {
+    if (typeof localStorage !== 'undefined') {
+      for (let index = localStorage.length - 1; index >= 0; index -= 1) {
+        const key = localStorage.key(index);
+        if (key?.startsWith(prefix)) localStorage.removeItem(key);
+      }
     }
+  } catch {
+    unavailable();
   }
 }
 export const attemptSchema = z.object({
