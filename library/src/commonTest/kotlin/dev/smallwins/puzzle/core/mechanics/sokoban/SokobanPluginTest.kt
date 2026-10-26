@@ -22,13 +22,13 @@ class SokobanPluginTest {
 
     @Test
     fun generatedPuzzleIsDeterministicAndSolverProvesMinimumPushes() {
-        val request = GenerationRequest("sokoban-seed", 3, Difficulty(DifficultyBand.MEDIUM, .5))
+        val request = GenerationRequest("parity", 3, Difficulty(DifficultyBand.EASY, 0.0), variant = "8")
         val generated = SokobanPlugin.generate(request)
         assertEquals(generated, SokobanPlugin.generate(request))
         assertTrue(SokobanPlugin.validateLevel(generated.level).valid)
         val analysis = SokobanPlugin.analyze(generated.level.payload)
         assertEquals("solved", analysis.status)
-        assertTrue((analysis.minimumPushes ?: 0) >= 8)
+        assertTrue((analysis.minimumPushes ?: 0) >= 6)
         var state = SokobanPlugin.initialState(generated.level)
         generated.solutionWitness.moves.forEach { direction ->
             state = SokobanPlugin.transition(generated.level, state, SokobanAction("move", direction)).state

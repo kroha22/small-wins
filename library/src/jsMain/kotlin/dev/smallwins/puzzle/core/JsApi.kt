@@ -343,6 +343,15 @@ fun solveWithBudget(
     }
 
 @JsExport
+fun analyzeSokoban(
+    levelJson: String,
+    budget: Int,
+): String {
+    val level = libraryJson.decodeFromString<SokobanLevel>(levelJson)
+    return libraryJson.encodeToString(SokobanPlugin.analyze(level.payload, budget))
+}
+
+@JsExport
 fun solveDetails(
     mechanicId: String,
     levelJson: String,
