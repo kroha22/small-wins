@@ -20,7 +20,7 @@ class CatalogTest {
 
     @Test
     fun onlyExecutableMechanicsAdvertisePilotCapabilities() {
-        val executable = setOf("network", "purrdoku", "shikaku")
+        val executable = setOf("network", "purrdoku", "route", "shikaku")
         mechanicCatalog.forEach { entry ->
             if (entry.mechanicId in executable) {
                 assertEquals(LibraryStage.PILOT, entry.stage)

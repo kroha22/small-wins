@@ -59,6 +59,36 @@
       "solved": true,
       "generationRequest": { "seed": "fixture-shikaku", "generatorVersion": 1, "difficulty": { "band": "easy", "normalized": 0.25, "parameters": {} } },
       "expectedGeneration": { "level": { "identity": { "mechanicId": "shikaku", "productGameId": "shikaku", "levelPackId": "generated", "levelId": "generated-79540806", "schemaVersion": 1, "rulesVersion": 1, "contentVersion": 1, "generatorVersion": 1, "seed": "fixture-shikaku" }, "difficulty": { "band": "easy", "normalized": 0.25, "parameters": {} }, "payload": { "rows": 3, "cols": 3, "clues": [{ "cell": 0, "area": 3 }, { "cell": 5, "area": 3 }, { "cell": 8, "area": 3 }], "initialRegions": [-1, -1, -1, -1, -1, -1, -1, -1, -1] } }, "solutionWitness": { "regions": [0, 0, 0, 1, 1, 1, 2, 2, 2] }, "metrics": { "rows": 3, "cols": 3, "regions": 3, "attempts": 2 }, "warnings": [] }
+    },
+    {
+      "mechanicId": "route",
+      "level": {
+        "identity": { "mechanicId": "route", "productGameId": "waypoints", "levelPackId": "conformance", "levelId": "route-trace", "schemaVersion": 1, "rulesVersion": 1, "contentVersion": 1 },
+        "difficulty": { "band": "easy", "normalized": 0.25, "parameters": {} },
+        "payload": {
+          "nodes": [{ "id": "a", "x": 0, "y": 0 }, { "id": "b", "x": 1, "y": 0 }, { "id": "c", "x": 2, "y": 0 }, { "id": "d", "x": 3, "y": 0 }],
+          "connections": [{ "firstNodeId": "a", "secondNodeId": "b" }, { "firstNodeId": "b", "secondNodeId": "c" }, { "firstNodeId": "c", "secondNodeId": "d" }],
+          "starts": [{ "id": "start", "nodeId": "a" }],
+          "targets": [{ "id": "target", "nodeId": "d" }],
+          "waypoints": [{ "id": "stop", "nodeId": "c", "required": true }],
+          "pathRules": { "targetRequiresAllRequiredWaypoints": true }
+        }
+      },
+      "invalidLevel": {
+        "identity": { "mechanicId": "route", "productGameId": "waypoints", "levelPackId": "conformance", "levelId": "route-invalid", "schemaVersion": 1, "rulesVersion": 1, "contentVersion": 1 },
+        "difficulty": { "band": "easy", "normalized": 0.25, "parameters": {} },
+        "payload": { "nodes": [{ "id": "a", "x": 0, "y": 0 }], "connections": [], "starts": [], "targets": [], "waypoints": [] }
+      },
+      "actions": [{ "type": "start", "startId": "start" }, { "type": "extend", "nodeId": "b" }, { "type": "extend", "nodeId": "c" }, { "type": "extend", "nodeId": "d" }],
+      "expectedStates": [
+        { "paths": [{ "startId": "start", "nodeIds": ["a"] }], "activeStartId": "start", "visitedWaypointIds": [], "deadEndDetected": false },
+        { "paths": [{ "startId": "start", "nodeIds": ["a", "b"] }], "activeStartId": "start", "visitedWaypointIds": [], "deadEndDetected": false },
+        { "paths": [{ "startId": "start", "nodeIds": ["a", "b", "c"] }], "activeStartId": "start", "visitedWaypointIds": ["stop"], "deadEndDetected": false },
+        { "paths": [{ "startId": "start", "targetId": "target", "nodeIds": ["a", "b", "c", "d"] }], "activeStartId": "start", "visitedWaypointIds": ["stop"], "deadEndDetected": false }
+      ],
+      "solved": true,
+      "generationRequest": { "seed": "fixture-route", "generatorVersion": 1, "difficulty": { "band": "easy", "normalized": 0.25, "parameters": {} }, "parameters": { "size": 3 } },
+      "expectedGeneration": { "level": { "identity": { "mechanicId": "route", "productGameId": "route", "levelPackId": "generated", "levelId": "generated-f5865388", "schemaVersion": 1, "rulesVersion": 1, "contentVersion": 1, "generatorVersion": 1, "seed": "fixture-route" }, "difficulty": { "band": "easy", "normalized": 0.25, "parameters": {} }, "payload": { "nodes": [{ "id": "cell-0", "x": 0.0, "y": 0.0, "reusable": false }, { "id": "cell-1", "x": 1.0, "y": 0.0, "reusable": false }, { "id": "cell-2", "x": 2.0, "y": 0.0, "reusable": false }, { "id": "cell-3", "x": 0.0, "y": 1.0, "reusable": false }, { "id": "cell-4", "x": 1.0, "y": 1.0, "reusable": false }, { "id": "cell-5", "x": 2.0, "y": 1.0, "reusable": false }, { "id": "cell-6", "x": 0.0, "y": 2.0, "reusable": false }, { "id": "cell-7", "x": 1.0, "y": 2.0, "reusable": false }, { "id": "cell-8", "x": 2.0, "y": 2.0, "reusable": false }], "connections": [{ "firstNodeId": "cell-0", "secondNodeId": "cell-1", "bidirectional": true }, { "firstNodeId": "cell-0", "secondNodeId": "cell-3", "bidirectional": true }, { "firstNodeId": "cell-1", "secondNodeId": "cell-2", "bidirectional": true }, { "firstNodeId": "cell-1", "secondNodeId": "cell-4", "bidirectional": true }, { "firstNodeId": "cell-2", "secondNodeId": "cell-5", "bidirectional": true }, { "firstNodeId": "cell-3", "secondNodeId": "cell-4", "bidirectional": true }, { "firstNodeId": "cell-3", "secondNodeId": "cell-6", "bidirectional": true }, { "firstNodeId": "cell-4", "secondNodeId": "cell-5", "bidirectional": true }, { "firstNodeId": "cell-4", "secondNodeId": "cell-7", "bidirectional": true }, { "firstNodeId": "cell-5", "secondNodeId": "cell-8", "bidirectional": true }, { "firstNodeId": "cell-6", "secondNodeId": "cell-7", "bidirectional": true }, { "firstNodeId": "cell-7", "secondNodeId": "cell-8", "bidirectional": true }], "starts": [{ "id": "start", "nodeId": "cell-0" }], "targets": [{ "id": "target", "nodeId": "cell-3" }], "waypoints": [{ "id": "waypoint-1", "nodeId": "cell-2", "required": true }, { "id": "waypoint-2", "nodeId": "cell-4", "required": true }], "forbiddenNodeIds": ["cell-6", "cell-7", "cell-8"], "pathRules": { "nodesMayRepeat": false, "pathsMayCross": false, "pathsMayShareNodes": false, "targetRequiresAllRequiredWaypoints": true } } }, "solutionWitness": { "paths": [{ "startId": "start", "targetId": "target", "nodeIds": ["cell-0", "cell-1", "cell-2", "cell-5", "cell-4", "cell-3"] }], "activeStartId": "start", "visitedWaypointIds": ["waypoint-1", "waypoint-2"], "deadEndDetected": false }, "metrics": { "rows": 3, "cols": 3, "routeNodes": 6, "blockedNodes": 3 }, "warnings": [] }
     }
   ]
 }

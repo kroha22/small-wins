@@ -10,6 +10,10 @@ import dev.smallwins.puzzle.core.mechanics.placement.PlacementAction
 import dev.smallwins.puzzle.core.mechanics.placement.PlacementLevel
 import dev.smallwins.puzzle.core.mechanics.placement.PlacementPlugin
 import dev.smallwins.puzzle.core.mechanics.placement.PlacementState
+import dev.smallwins.puzzle.core.mechanics.route.RouteAction
+import dev.smallwins.puzzle.core.mechanics.route.RouteLevel
+import dev.smallwins.puzzle.core.mechanics.route.RoutePlugin
+import dev.smallwins.puzzle.core.mechanics.route.RouteState
 import dev.smallwins.puzzle.core.mechanics.shikaku.ShikakuAction
 import dev.smallwins.puzzle.core.mechanics.shikaku.ShikakuLevel
 import dev.smallwins.puzzle.core.mechanics.shikaku.ShikakuPlugin
@@ -29,6 +33,7 @@ fun generate(
     when (canonicalMechanicId(mechanicId)) {
         "network" -> libraryJson.encodeToString(NetworkPlugin.generate(libraryJson.decodeFromString(requestJson)))
         "purrdoku" -> libraryJson.encodeToString(PlacementPlugin.generate(libraryJson.decodeFromString(requestJson)))
+        "route" -> libraryJson.encodeToString(RoutePlugin.generate(libraryJson.decodeFromString(requestJson)))
         "shikaku" -> libraryJson.encodeToString(ShikakuPlugin.generate(libraryJson.decodeFromString(requestJson)))
         else -> unsupported(mechanicId)
     }
@@ -56,6 +61,12 @@ fun validateLevel(
                     .getOrElse { ValidationResult(false, listOf(ValidationIssue("json.invalid", "$"))) }
             libraryJson.encodeToString(result)
         }
+        "route" -> {
+            val result =
+                runCatching { RoutePlugin.validateLevel(libraryJson.decodeFromString<RouteLevel>(levelJson)) }
+                    .getOrElse { ValidationResult(false, listOf(ValidationIssue("json.invalid", "$"))) }
+            libraryJson.encodeToString(result)
+        }
         "shikaku" -> {
             val result =
                 runCatching { ShikakuPlugin.validateLevel(libraryJson.decodeFromString<ShikakuLevel>(levelJson)) }
@@ -73,6 +84,7 @@ fun initialState(
     when (canonicalMechanicId(mechanicId)) {
         "network" -> libraryJson.encodeToString(NetworkPlugin.initialState(libraryJson.decodeFromString<NetworkLevel>(levelJson)))
         "purrdoku" -> libraryJson.encodeToString(PlacementPlugin.initialState(libraryJson.decodeFromString<PlacementLevel>(levelJson)))
+        "route" -> libraryJson.encodeToString(RoutePlugin.initialState(libraryJson.decodeFromString<RouteLevel>(levelJson)))
         "shikaku" -> libraryJson.encodeToString(ShikakuPlugin.initialState(libraryJson.decodeFromString<ShikakuLevel>(levelJson)))
         else -> unsupported(mechanicId)
     }
@@ -93,6 +105,11 @@ fun validateState(
             val level = libraryJson.decodeFromString<PlacementLevel>(levelJson)
             val state = libraryJson.decodeFromString<PlacementState>(stateJson)
             libraryJson.encodeToString(PlacementPlugin.validateState(level, state))
+        }
+        "route" -> {
+            val level = libraryJson.decodeFromString<RouteLevel>(levelJson)
+            val state = libraryJson.decodeFromString<RouteState>(stateJson)
+            libraryJson.encodeToString(RoutePlugin.validateState(level, state))
         }
         "shikaku" -> {
             val level = libraryJson.decodeFromString<ShikakuLevel>(levelJson)
@@ -122,6 +139,12 @@ fun transition(
             val action = libraryJson.decodeFromString<PlacementAction>(actionJson)
             libraryJson.encodeToString(PlacementPlugin.transition(level, state, action))
         }
+        "route" -> {
+            val level = libraryJson.decodeFromString<RouteLevel>(levelJson)
+            val state = libraryJson.decodeFromString<RouteState>(stateJson)
+            val action = libraryJson.decodeFromString<RouteAction>(actionJson)
+            libraryJson.encodeToString(RoutePlugin.transition(level, state, action))
+        }
         "shikaku" -> {
             val level = libraryJson.decodeFromString<ShikakuLevel>(levelJson)
             val state = libraryJson.decodeFromString<ShikakuState>(stateJson)
@@ -147,6 +170,11 @@ fun evaluate(
             val level = libraryJson.decodeFromString<PlacementLevel>(levelJson)
             val state = libraryJson.decodeFromString<PlacementState>(stateJson)
             libraryJson.encodeToString(PlacementPlugin.evaluate(level, state))
+        }
+        "route" -> {
+            val level = libraryJson.decodeFromString<RouteLevel>(levelJson)
+            val state = libraryJson.decodeFromString<RouteState>(stateJson)
+            libraryJson.encodeToString(RoutePlugin.evaluate(level, state))
         }
         "shikaku" -> {
             val level = libraryJson.decodeFromString<ShikakuLevel>(levelJson)
@@ -184,6 +212,7 @@ fun solve(
     when (canonicalMechanicId(mechanicId)) {
         "network" -> libraryJson.encodeToString(NetworkPlugin.solve(libraryJson.decodeFromString<NetworkLevel>(levelJson)))
         "purrdoku" -> libraryJson.encodeToString(PlacementPlugin.solve(libraryJson.decodeFromString<PlacementLevel>(levelJson)))
+        "route" -> libraryJson.encodeToString(RoutePlugin.solve(libraryJson.decodeFromString<RouteLevel>(levelJson)))
         "shikaku" -> libraryJson.encodeToString(ShikakuPlugin.solve(libraryJson.decodeFromString<ShikakuLevel>(levelJson)))
         else -> unsupported(mechanicId)
     }
@@ -213,6 +242,11 @@ fun solveDetails(
             val state = stateJson?.let { libraryJson.decodeFromString<PlacementState>(it) } ?: PlacementPlugin.initialState(level)
             libraryJson.encodeToString(PlacementPlugin.solveDetails(level, state, limit, budget))
         }
+        "route" -> {
+            val level = libraryJson.decodeFromString<RouteLevel>(levelJson)
+            val state = stateJson?.let { libraryJson.decodeFromString<RouteState>(it) } ?: RoutePlugin.initialState(level)
+            libraryJson.encodeToString(RoutePlugin.solveDetails(level, state, limit, budget))
+        }
         "shikaku" -> {
             val level = libraryJson.decodeFromString<ShikakuLevel>(levelJson)
             libraryJson.encodeToString(ShikakuPlugin.solveDetails(level, limit, budget))
@@ -237,6 +271,11 @@ fun hint(
             val level = libraryJson.decodeFromString<PlacementLevel>(levelJson)
             val state = libraryJson.decodeFromString<PlacementState>(stateJson)
             libraryJson.encodeToString(PlacementPlugin.hint(level, state, used))
+        }
+        "route" -> {
+            val level = libraryJson.decodeFromString<RouteLevel>(levelJson)
+            val state = libraryJson.decodeFromString<RouteState>(stateJson)
+            libraryJson.encodeToString(RoutePlugin.hint(level, state, used))
         }
         "shikaku" -> {
             val level = libraryJson.decodeFromString<ShikakuLevel>(levelJson)
@@ -265,6 +304,13 @@ fun freshSession(
             SessionCodec.encode(
                 SessionCodec.fresh(level.identity, PlacementPlugin.initialState(level), attemptId),
                 PlacementState.serializer(),
+            )
+        }
+        "route" -> {
+            val level = libraryJson.decodeFromString<RouteLevel>(levelJson)
+            SessionCodec.encode(
+                SessionCodec.fresh(level.identity, RoutePlugin.initialState(level), attemptId),
+                RouteState.serializer(),
             )
         }
         "shikaku" -> {
@@ -323,6 +369,22 @@ fun encodeSession(
                 PlacementPlugin.validateState(level, it)
             }
         }
+        "route" -> {
+            val level = libraryJson.decodeFromString<RouteLevel>(levelJson)
+            val session =
+                PuzzleSession(
+                    identity = level.identity,
+                    attemptId = attemptId,
+                    state = libraryJson.decodeFromString<RouteState>(stateJson),
+                    history = libraryJson.decodeFromString(ListSerializer(RouteState.serializer()), historyJson),
+                    moveCount = moveCount,
+                    hintsUsed = hintsUsed,
+                    revision = revision,
+                )
+            SessionCodec.encodeValidated(session, level.identity, RouteState.serializer()) {
+                RoutePlugin.validateState(level, it)
+            }
+        }
         "shikaku" -> {
             val level = libraryJson.decodeFromString<ShikakuLevel>(levelJson)
             val session =
@@ -373,6 +435,18 @@ fun restoreSession(
                     stateSerializer = PlacementState.serializer(),
                 ) { PlacementPlugin.validateState(level, it) }
             libraryJson.encodeToString(SessionRestoreResult.serializer(PlacementState.serializer()), result)
+        }
+        "route" -> {
+            val level = libraryJson.decodeFromString<RouteLevel>(levelJson)
+            val result =
+                SessionCodec.restore(
+                    expectedIdentity = level.identity,
+                    initialState = RoutePlugin.initialState(level),
+                    raw = sessionJson,
+                    fallbackAttemptId = fallbackAttemptId,
+                    stateSerializer = RouteState.serializer(),
+                ) { RoutePlugin.validateState(level, it) }
+            libraryJson.encodeToString(SessionRestoreResult.serializer(RouteState.serializer()), result)
         }
         "shikaku" -> {
             val level = libraryJson.decodeFromString<ShikakuLevel>(levelJson)

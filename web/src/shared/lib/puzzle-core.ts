@@ -1,6 +1,6 @@
 import * as generated from '../../generated/puzzle-core/small-wins-puzzle-core.mjs';
 
-export type MechanicId = 'network' | 'purrdoku' | 'shikaku';
+export type MechanicId = 'network' | 'purrdoku' | 'route' | 'shikaku';
 
 const encode = (value: unknown) => JSON.stringify(value);
 const decode = <T>(value: string): T => JSON.parse(value) as T;
@@ -26,7 +26,7 @@ export const puzzleCore = {
   solveWithBudget: <T>(mechanicId: 'network', level: unknown, budget: number) =>
     decode<T>(generated.solveWithBudget(mechanicId, encode(level), budget)),
   solveDetails: <T>(
-    mechanicId: 'purrdoku' | 'shikaku',
+    mechanicId: 'purrdoku' | 'route' | 'shikaku',
     level: unknown,
     state: unknown | null,
     limit: number,

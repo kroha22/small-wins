@@ -12,6 +12,11 @@ import dev.smallwins.puzzle.core.mechanics.placement.PlacementLevel
 import dev.smallwins.puzzle.core.mechanics.placement.PlacementPlugin
 import dev.smallwins.puzzle.core.mechanics.placement.PlacementPayload
 import dev.smallwins.puzzle.core.mechanics.placement.PlacementState
+import dev.smallwins.puzzle.core.mechanics.route.RouteAction
+import dev.smallwins.puzzle.core.mechanics.route.RouteGeneratorMetrics
+import dev.smallwins.puzzle.core.mechanics.route.RoutePlugin
+import dev.smallwins.puzzle.core.mechanics.route.RoutePayload
+import dev.smallwins.puzzle.core.mechanics.route.RouteState
 import dev.smallwins.puzzle.core.mechanics.shikaku.ShikakuAction
 import dev.smallwins.puzzle.core.mechanics.shikaku.ShikakuGeneratorMetrics
 import dev.smallwins.puzzle.core.mechanics.shikaku.ShikakuLevel
@@ -19,9 +24,12 @@ import dev.smallwins.puzzle.core.mechanics.shikaku.ShikakuPlugin
 import dev.smallwins.puzzle.core.mechanics.shikaku.ShikakuPayload
 import dev.smallwins.puzzle.core.mechanics.shikaku.ShikakuState
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.decodeFromJsonElement
+import kotlinx.serialization.json.doubleOrNull
 import kotlinx.serialization.json.encodeToJsonElement
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -57,7 +65,7 @@ class ConformanceFixtureTest {
                 assertEquals(expected, state, "${fixture.mechanicId} transition")
             }
             assertEquals(fixture.solved, adapter.solved(fixture.level, state))
-            assertEquals(fixture.expectedGeneration, adapter.generate(fixture.generationRequest))
+            assertJsonEquivalent(fixture.expectedGeneration, adapter.generate(fixture.generationRequest), "${fixture.mechanicId} generation")
             adapter.assertSessionRoundTripAndVersionRejection(fixture.level, state)
         }
     }
@@ -92,6 +100,16 @@ private fun fixtureAdapter(mechanicId: String): FixtureAdapter =
                 PlacementAction.serializer(),
                 GenerationResult.serializer(level, PlacementState.serializer(), PlacementGeneratorMetrics.serializer()),
                 PlacementPlugin,
+            )
+        }
+        "route" -> {
+            val level = PuzzleLevel.serializer(RoutePayload.serializer())
+            typedFixtureAdapter(
+                level,
+                RouteState.serializer(),
+                RouteAction.serializer(),
+                GenerationResult.serializer(level, RouteState.serializer(), RouteGeneratorMetrics.serializer()),
+                RoutePlugin,
             )
         }
         "shikaku" -> {
@@ -162,3 +180,20 @@ private fun <T> encode(value: T, serializer: kotlinx.serialization.KSerializer<T
     libraryJson.encodeToJsonElement(serializer, value) as JsonObject
 
 expect fun readConformanceFixture(name: String): String
+
+private fun assertJsonEquivalent(expected: JsonElement, actual: JsonElement, context: String) {
+    when {
+        expected is JsonObject && actual is JsonObject -> {
+            assertEquals(expected.keys, actual.keys, "$context keys")
+            expected.forEach { (key, value) -> assertJsonEquivalent(value, actual.getValue(key), "$context.$key") }
+        }
+        expected is JsonArray && actual is JsonArray -> {
+            assertEquals(expected.size, actual.size, "$context size")
+            expected.indices.forEach { index -> assertJsonEquivalent(expected[index], actual[index], "$context[$index]") }
+        }
+        expected is JsonPrimitive && actual is JsonPrimitive && !expected.isString && !actual.isString &&
+            expected.doubleOrNull != null && actual.doubleOrNull != null ->
+            assertEquals(expected.doubleOrNull, actual.doubleOrNull, context)
+        else -> assertEquals(expected, actual, context)
+    }
+}

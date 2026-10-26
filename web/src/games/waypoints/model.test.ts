@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { engine, type Payload } from './model';
+import levels from './levels.json';
 const p: Payload = { rows: 3, cols: 3, start: 0, target: 6, blocked: [4], waypoints: [2, 8] };
 describe('Waypoints', () => {
   it('solves a complete simple path through all markers', () => {
@@ -30,5 +31,21 @@ describe('Waypoints', () => {
   it('checks the entire saved path', () => {
     expect(engine.validState(p, { path: [0, 1, 2, 8, 7, 6] })).toBe(false);
     expect(engine.validState(p, { path: [0, 3, 6, 7, 8] })).toBe(false);
+  });
+  it('round-trips a portable route session and rejects changed content', () => {
+    const payload = levels[0]!.payload as Payload;
+    const level = { ...levels[0]!, difficulty: 'tutorial' as const, payload };
+    const initial = engine.initial(payload);
+    const moved = engine.apply(payload, initial, { type: 'addCell', cell: 3 }).state;
+    const session = {
+      attemptId: 'route-web', state: moved, history: [initial], moveCount: 1, hintsUsed: 1, revision: 2,
+    };
+    const encoded = engine.persistence!.encode(level, session);
+    expect(encoded).toMatchObject({
+      schemaVersion: 1,
+      identity: { mechanicId: 'route', productGameId: 'waypoints', levelId: level.id },
+    });
+    expect(engine.persistence!.restore(level, encoded, 'fallback')).toEqual(session);
+    expect(engine.persistence!.restore({ ...level, contentVersion: 2 }, encoded, 'fallback')).toBeNull();
   });
 });
