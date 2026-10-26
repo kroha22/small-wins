@@ -14,6 +14,10 @@ import dev.smallwins.puzzle.core.mechanics.placement.PlacementAction
 import dev.smallwins.puzzle.core.mechanics.placement.PlacementLevel
 import dev.smallwins.puzzle.core.mechanics.placement.PlacementPlugin
 import dev.smallwins.puzzle.core.mechanics.placement.PlacementState
+import dev.smallwins.puzzle.core.mechanics.packing.PackingAction
+import dev.smallwins.puzzle.core.mechanics.packing.PackingLevel
+import dev.smallwins.puzzle.core.mechanics.packing.PackingPlugin
+import dev.smallwins.puzzle.core.mechanics.packing.PackingState
 import dev.smallwins.puzzle.core.mechanics.route.RouteAction
 import dev.smallwins.puzzle.core.mechanics.route.RouteLevel
 import dev.smallwins.puzzle.core.mechanics.route.RoutePlugin
@@ -22,6 +26,10 @@ import dev.smallwins.puzzle.core.mechanics.shikaku.ShikakuAction
 import dev.smallwins.puzzle.core.mechanics.shikaku.ShikakuLevel
 import dev.smallwins.puzzle.core.mechanics.shikaku.ShikakuPlugin
 import dev.smallwins.puzzle.core.mechanics.shikaku.ShikakuState
+import dev.smallwins.puzzle.core.mechanics.sokoban.SokobanAction
+import dev.smallwins.puzzle.core.mechanics.sokoban.SokobanLevel
+import dev.smallwins.puzzle.core.mechanics.sokoban.SokobanPlugin
+import dev.smallwins.puzzle.core.mechanics.sokoban.SokobanState
 import dev.smallwins.puzzle.core.mechanics.untangle.UntangleAction
 import dev.smallwins.puzzle.core.mechanics.untangle.UntangleLevel
 import dev.smallwins.puzzle.core.mechanics.untangle.UntanglePlugin
@@ -41,9 +49,11 @@ fun generate(
     when (canonicalMechanicId(mechanicId)) {
         "network" -> libraryJson.encodeToString(NetworkPlugin.generate(libraryJson.decodeFromString(requestJson)))
         "habitat-search" -> libraryJson.encodeToString(HabitatPlugin.generate(libraryJson.decodeFromString(requestJson)))
+        "packing" -> libraryJson.encodeToString(PackingPlugin.generate(libraryJson.decodeFromString(requestJson)))
         "purrdoku" -> libraryJson.encodeToString(PlacementPlugin.generate(libraryJson.decodeFromString(requestJson)))
         "route" -> libraryJson.encodeToString(RoutePlugin.generate(libraryJson.decodeFromString(requestJson)))
         "shikaku" -> libraryJson.encodeToString(ShikakuPlugin.generate(libraryJson.decodeFromString(requestJson)))
+        "sokoban" -> libraryJson.encodeToString(SokobanPlugin.generate(libraryJson.decodeFromString(requestJson)))
         "untangle" -> libraryJson.encodeToString(UntanglePlugin.generate(libraryJson.decodeFromString(requestJson)))
         else -> unsupported(mechanicId)
     }
@@ -71,6 +81,11 @@ fun validateLevel(
                     .getOrElse { ValidationResult(false, listOf(ValidationIssue("json.invalid", "$"))) }
             libraryJson.encodeToString(result)
         }
+        "packing" -> {
+            val result = runCatching { PackingPlugin.validateLevel(libraryJson.decodeFromString<PackingLevel>(levelJson)) }
+                .getOrElse { ValidationResult(false, listOf(ValidationIssue("json.invalid", "$"))) }
+            libraryJson.encodeToString(result)
+        }
         "purrdoku" -> {
             val result =
                 runCatching { PlacementPlugin.validateLevel(libraryJson.decodeFromString<PlacementLevel>(levelJson)) }
@@ -87,6 +102,11 @@ fun validateLevel(
             val result =
                 runCatching { ShikakuPlugin.validateLevel(libraryJson.decodeFromString<ShikakuLevel>(levelJson)) }
                     .getOrElse { ValidationResult(false, listOf(ValidationIssue("json.invalid", "$"))) }
+            libraryJson.encodeToString(result)
+        }
+        "sokoban" -> {
+            val result = runCatching { SokobanPlugin.validateLevel(libraryJson.decodeFromString<SokobanLevel>(levelJson)) }
+                .getOrElse { ValidationResult(false, listOf(ValidationIssue("json.invalid", "$"))) }
             libraryJson.encodeToString(result)
         }
         "untangle" -> {
@@ -106,9 +126,11 @@ fun initialState(
     when (canonicalMechanicId(mechanicId)) {
         "network" -> libraryJson.encodeToString(NetworkPlugin.initialState(libraryJson.decodeFromString<NetworkLevel>(levelJson)))
         "habitat-search" -> libraryJson.encodeToString(HabitatPlugin.initialState(libraryJson.decodeFromString<HabitatLevel>(levelJson)))
+        "packing" -> libraryJson.encodeToString(PackingPlugin.initialState(libraryJson.decodeFromString<PackingLevel>(levelJson)))
         "purrdoku" -> libraryJson.encodeToString(PlacementPlugin.initialState(libraryJson.decodeFromString<PlacementLevel>(levelJson)))
         "route" -> libraryJson.encodeToString(RoutePlugin.initialState(libraryJson.decodeFromString<RouteLevel>(levelJson)))
         "shikaku" -> libraryJson.encodeToString(ShikakuPlugin.initialState(libraryJson.decodeFromString<ShikakuLevel>(levelJson)))
+        "sokoban" -> libraryJson.encodeToString(SokobanPlugin.initialState(libraryJson.decodeFromString<SokobanLevel>(levelJson)))
         "untangle" -> libraryJson.encodeToString(UntanglePlugin.initialState(libraryJson.decodeFromString<UntangleLevel>(levelJson)))
         else -> unsupported(mechanicId)
     }
@@ -130,6 +152,11 @@ fun validateState(
             val state = libraryJson.decodeFromString<HabitatState>(stateJson)
             libraryJson.encodeToString(HabitatPlugin.validateState(level, state))
         }
+        "packing" -> {
+            val level = libraryJson.decodeFromString<PackingLevel>(levelJson)
+            val state = libraryJson.decodeFromString<PackingState>(stateJson)
+            libraryJson.encodeToString(PackingPlugin.validateState(level, state))
+        }
         "purrdoku" -> {
             val level = libraryJson.decodeFromString<PlacementLevel>(levelJson)
             val state = libraryJson.decodeFromString<PlacementState>(stateJson)
@@ -144,6 +171,11 @@ fun validateState(
             val level = libraryJson.decodeFromString<ShikakuLevel>(levelJson)
             val state = libraryJson.decodeFromString<ShikakuState>(stateJson)
             libraryJson.encodeToString(ShikakuPlugin.validateState(level, state))
+        }
+        "sokoban" -> {
+            val level = libraryJson.decodeFromString<SokobanLevel>(levelJson)
+            val state = libraryJson.decodeFromString<SokobanState>(stateJson)
+            libraryJson.encodeToString(SokobanPlugin.validateState(level, state))
         }
         "untangle" -> {
             val level = libraryJson.decodeFromString<UntangleLevel>(levelJson)
@@ -173,6 +205,12 @@ fun transition(
             val action = libraryJson.decodeFromString<HabitatAction>(actionJson)
             libraryJson.encodeToString(HabitatPlugin.transition(level, state, action))
         }
+        "packing" -> {
+            val level = libraryJson.decodeFromString<PackingLevel>(levelJson)
+            val state = libraryJson.decodeFromString<PackingState>(stateJson)
+            val action = libraryJson.decodeFromString<PackingAction>(actionJson)
+            libraryJson.encodeToString(PackingPlugin.transition(level, state, action))
+        }
         "purrdoku" -> {
             val level = libraryJson.decodeFromString<PlacementLevel>(levelJson)
             val state = libraryJson.decodeFromString<PlacementState>(stateJson)
@@ -190,6 +228,12 @@ fun transition(
             val state = libraryJson.decodeFromString<ShikakuState>(stateJson)
             val action = libraryJson.decodeFromString<ShikakuAction>(actionJson)
             libraryJson.encodeToString(ShikakuPlugin.transition(level, state, action))
+        }
+        "sokoban" -> {
+            val level = libraryJson.decodeFromString<SokobanLevel>(levelJson)
+            val state = libraryJson.decodeFromString<SokobanState>(stateJson)
+            val action = libraryJson.decodeFromString<SokobanAction>(actionJson)
+            libraryJson.encodeToString(SokobanPlugin.transition(level, state, action))
         }
         "untangle" -> {
             val level = libraryJson.decodeFromString<UntangleLevel>(levelJson)
@@ -217,6 +261,11 @@ fun evaluate(
             val state = libraryJson.decodeFromString<HabitatState>(stateJson)
             libraryJson.encodeToString(HabitatPlugin.evaluate(level, state))
         }
+        "packing" -> {
+            val level = libraryJson.decodeFromString<PackingLevel>(levelJson)
+            val state = libraryJson.decodeFromString<PackingState>(stateJson)
+            libraryJson.encodeToString(PackingPlugin.evaluate(level, state))
+        }
         "purrdoku" -> {
             val level = libraryJson.decodeFromString<PlacementLevel>(levelJson)
             val state = libraryJson.decodeFromString<PlacementState>(stateJson)
@@ -231,6 +280,11 @@ fun evaluate(
             val level = libraryJson.decodeFromString<ShikakuLevel>(levelJson)
             val state = libraryJson.decodeFromString<ShikakuState>(stateJson)
             libraryJson.encodeToString(ShikakuPlugin.evaluate(level, state))
+        }
+        "sokoban" -> {
+            val level = libraryJson.decodeFromString<SokobanLevel>(levelJson)
+            val state = libraryJson.decodeFromString<SokobanState>(stateJson)
+            libraryJson.encodeToString(SokobanPlugin.evaluate(level, state))
         }
         "untangle" -> {
             val level = libraryJson.decodeFromString<UntangleLevel>(levelJson)
@@ -268,9 +322,11 @@ fun solve(
     when (canonicalMechanicId(mechanicId)) {
         "network" -> libraryJson.encodeToString(NetworkPlugin.solve(libraryJson.decodeFromString<NetworkLevel>(levelJson)))
         "habitat-search" -> libraryJson.encodeToString(HabitatPlugin.solve(libraryJson.decodeFromString<HabitatLevel>(levelJson)))
+        "packing" -> libraryJson.encodeToString(PackingPlugin.solve(libraryJson.decodeFromString<PackingLevel>(levelJson)))
         "purrdoku" -> libraryJson.encodeToString(PlacementPlugin.solve(libraryJson.decodeFromString<PlacementLevel>(levelJson)))
         "route" -> libraryJson.encodeToString(RoutePlugin.solve(libraryJson.decodeFromString<RouteLevel>(levelJson)))
         "shikaku" -> libraryJson.encodeToString(ShikakuPlugin.solve(libraryJson.decodeFromString<ShikakuLevel>(levelJson)))
+        "sokoban" -> libraryJson.encodeToString(SokobanPlugin.solve(libraryJson.decodeFromString<SokobanLevel>(levelJson)))
         "untangle" -> libraryJson.encodeToString(UntanglePlugin.solve(libraryJson.decodeFromString<UntangleLevel>(levelJson)))
         else -> unsupported(mechanicId)
     }
@@ -330,6 +386,11 @@ fun hint(
             val state = libraryJson.decodeFromString<HabitatState>(stateJson)
             libraryJson.encodeToString(HabitatPlugin.hint(level, state, used))
         }
+        "packing" -> {
+            val level = libraryJson.decodeFromString<PackingLevel>(levelJson)
+            val state = libraryJson.decodeFromString<PackingState>(stateJson)
+            libraryJson.encodeToString(PackingPlugin.hint(level, state, used))
+        }
         "purrdoku" -> {
             val level = libraryJson.decodeFromString<PlacementLevel>(levelJson)
             val state = libraryJson.decodeFromString<PlacementState>(stateJson)
@@ -344,6 +405,11 @@ fun hint(
             val level = libraryJson.decodeFromString<ShikakuLevel>(levelJson)
             val state = libraryJson.decodeFromString<ShikakuState>(stateJson)
             libraryJson.encodeToString(ShikakuPlugin.hint(level, state, used))
+        }
+        "sokoban" -> {
+            val level = libraryJson.decodeFromString<SokobanLevel>(levelJson)
+            val state = libraryJson.decodeFromString<SokobanState>(stateJson)
+            libraryJson.encodeToString(SokobanPlugin.hint(level, state, used))
         }
         "untangle" -> {
             val level = libraryJson.decodeFromString<UntangleLevel>(levelJson)
@@ -374,6 +440,10 @@ fun freshSession(
                 HabitatState.serializer(),
             )
         }
+        "packing" -> {
+            val level = libraryJson.decodeFromString<PackingLevel>(levelJson)
+            SessionCodec.encode(SessionCodec.fresh(level.identity, PackingPlugin.initialState(level), attemptId), PackingState.serializer())
+        }
         "purrdoku" -> {
             val level = libraryJson.decodeFromString<PlacementLevel>(levelJson)
             SessionCodec.encode(
@@ -394,6 +464,10 @@ fun freshSession(
                 SessionCodec.fresh(level.identity, ShikakuPlugin.initialState(level), attemptId),
                 ShikakuState.serializer(),
             )
+        }
+        "sokoban" -> {
+            val level = libraryJson.decodeFromString<SokobanLevel>(levelJson)
+            SessionCodec.encode(SessionCodec.fresh(level.identity, SokobanPlugin.initialState(level), attemptId), SokobanState.serializer())
         }
         "untangle" -> {
             val level = libraryJson.decodeFromString<UntangleLevel>(levelJson)
@@ -451,6 +525,19 @@ fun encodeSession(
                 HabitatPlugin.validateState(level, it)
             }
         }
+        "packing" -> {
+            val level = libraryJson.decodeFromString<PackingLevel>(levelJson)
+            val session = PuzzleSession(
+                identity = level.identity,
+                attemptId = attemptId,
+                state = libraryJson.decodeFromString<PackingState>(stateJson),
+                history = libraryJson.decodeFromString(ListSerializer(PackingState.serializer()), historyJson),
+                moveCount = moveCount,
+                hintsUsed = hintsUsed,
+                revision = revision,
+            )
+            SessionCodec.encodeValidated(session, level.identity, PackingState.serializer()) { PackingPlugin.validateState(level, it) }
+        }
         "purrdoku" -> {
             val level = libraryJson.decodeFromString<PlacementLevel>(levelJson)
             val session =
@@ -498,6 +585,19 @@ fun encodeSession(
             SessionCodec.encodeValidated(session, level.identity, ShikakuState.serializer()) {
                 ShikakuPlugin.validateState(level, it)
             }
+        }
+        "sokoban" -> {
+            val level = libraryJson.decodeFromString<SokobanLevel>(levelJson)
+            val session = PuzzleSession(
+                identity = level.identity,
+                attemptId = attemptId,
+                state = libraryJson.decodeFromString<SokobanState>(stateJson),
+                history = libraryJson.decodeFromString(ListSerializer(SokobanState.serializer()), historyJson),
+                moveCount = moveCount,
+                hintsUsed = hintsUsed,
+                revision = revision,
+            )
+            SessionCodec.encodeValidated(session, level.identity, SokobanState.serializer()) { SokobanPlugin.validateState(level, it) }
         }
         "untangle" -> {
             val level = libraryJson.decodeFromString<UntangleLevel>(levelJson)
@@ -550,6 +650,17 @@ fun restoreSession(
                 ) { HabitatPlugin.validateState(level, it) }
             libraryJson.encodeToString(SessionRestoreResult.serializer(HabitatState.serializer()), result)
         }
+        "packing" -> {
+            val level = libraryJson.decodeFromString<PackingLevel>(levelJson)
+            val result = SessionCodec.restore(
+                expectedIdentity = level.identity,
+                initialState = PackingPlugin.initialState(level),
+                raw = sessionJson,
+                fallbackAttemptId = fallbackAttemptId,
+                stateSerializer = PackingState.serializer(),
+            ) { PackingPlugin.validateState(level, it) }
+            libraryJson.encodeToString(SessionRestoreResult.serializer(PackingState.serializer()), result)
+        }
         "purrdoku" -> {
             val level = libraryJson.decodeFromString<PlacementLevel>(levelJson)
             val result =
@@ -585,6 +696,17 @@ fun restoreSession(
                     stateSerializer = ShikakuState.serializer(),
                 ) { ShikakuPlugin.validateState(level, it) }
             libraryJson.encodeToString(SessionRestoreResult.serializer(ShikakuState.serializer()), result)
+        }
+        "sokoban" -> {
+            val level = libraryJson.decodeFromString<SokobanLevel>(levelJson)
+            val result = SessionCodec.restore(
+                expectedIdentity = level.identity,
+                initialState = SokobanPlugin.initialState(level),
+                raw = sessionJson,
+                fallbackAttemptId = fallbackAttemptId,
+                stateSerializer = SokobanState.serializer(),
+            ) { SokobanPlugin.validateState(level, it) }
+            libraryJson.encodeToString(SessionRestoreResult.serializer(SokobanState.serializer()), result)
         }
         "untangle" -> {
             val level = libraryJson.decodeFromString<UntangleLevel>(levelJson)

@@ -3,14 +3,19 @@ package dev.smallwins.puzzle.core
 class StableRandom(seed: String) {
     private var state = stableHash(seed)
 
-    fun nextInt(bound: Int): Int {
-        require(bound > 0) { "bound must be positive" }
+    private fun nextUInt(): UInt {
         state += 0x6D2B79F5u
         var value = state
         value = (value xor (value shr 15)) * (value or 1u)
         value = value xor (value + (value xor (value shr 7)) * (value or 61u))
-        val result = value xor (value shr 14)
-        return (result.toULong() * bound.toULong() shr 32).toInt()
+        return value xor (value shr 14)
+    }
+
+    fun nextDouble(): Double = nextUInt().toDouble() / 4294967296.0
+
+    fun nextInt(bound: Int): Int {
+        require(bound > 0) { "bound must be positive" }
+        return (nextUInt().toULong() * bound.toULong() shr 32).toInt()
     }
 
     fun <T> shuffled(items: List<T>): List<T> {
